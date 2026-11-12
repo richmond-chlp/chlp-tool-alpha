@@ -1,0 +1,985 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>CHLP Tool Alpha</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one working column, like a ledger page: the program, the health effects to look for, the entries, the result directly under them, then the tracker with its charts, and the factors behind it all at the foot. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --ink:#172033; --muted:#566176; --line:#d3dae6;
+  --accent:#1f3864; --band:#1f3864; --band-ink:#ffffff; --head:#fff2cc; --head-line:#b8860b;
+  --ok:#17654a; --ok-bg:#e2f3eb; --warn:#7d5200; --warn-bg:#fcefd0; --bad:#8c2f2f; --bad-bg:#f9e3e1; --field:#ffffff; --focus:#2f6fde; --actual:#2a78d6; --plan:#eb6834;
+  --display:"Space Grotesk","Segoe UI",system-ui,sans-serif; --text:"Inter","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1522; --surface:#171f30; --ink:#e6ebf5; --muted:#9ba7bc; --line:#2d3950;
+  --accent:#9db9f0; --band:#263a63; --band-ink:#f2f5fb; --head:#3a3216; --head-line:#d9b44a;
+  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#3987e5; --plan:#d95926; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0f1522; --surface:#171f30; --ink:#e6ebf5; --muted:#9ba7bc; --line:#2d3950;
+  --accent:#9db9f0; --band:#263a63; --band-ink:#f2f5fb; --head:#3a3216; --head-line:#d9b44a;
+  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#3987e5; --plan:#d95926; color-scheme:dark }
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--text);font-size:15px;line-height:1.5}
+.wrap{max-width:920px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--display);font-size:1.75rem;line-height:1.2;margin:0;color:var(--accent);text-wrap:balance}
+h2{font-family:var(--display);font-size:1.15rem;margin:0;color:var(--accent)}
+h3{font-family:var(--display);font-size:.98rem;margin:0;color:var(--accent)}
+p{margin:0;max-width:68ch}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);vertical-align:middle}
+.top{display:flex;flex-direction:column;gap:10px}
+.muted{color:var(--muted)} .small{font-size:.86rem}
+.note{border-left:3px solid var(--head-line);background:var(--head);padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+section{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.grid{display:grid;gap:12px 14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.three{display:grid;gap:8px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+label,.lab{font-weight:600;font-size:.88rem}
+.hint{font-size:.8rem;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;box-sizing:border-box;min-width:0}
+input[type=checkbox],input[type=radio]{width:auto;flex:none;margin:3px 0 0;accent-color:var(--accent)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.cap{font-size:.74rem;color:var(--muted);font-weight:500}
+fieldset{border:0;padding:0;margin:0;display:flex;gap:16px;flex-wrap:wrap}
+fieldset label{font-weight:500;display:flex;gap:6px;align-items:flex-start}
+fieldset legend{padding:0;margin-bottom:6px}
+.check{display:flex;gap:9px;align-items:flex-start;font-weight:500;font-size:.92rem}
+.check b{font-weight:600}
+.qs{display:flex;flex-direction:column;gap:9px}
+button{font:inherit;font-weight:600;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--bg);padding:8px 14px;cursor:pointer}
+button.quiet{background:transparent;color:var(--accent)}
+button.sm{font-size:.82rem;padding:5px 10px}
+.big{font-family:var(--display);font-size:2.1rem;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--accent)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font-size:.82rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.plain{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+.flag{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+#gated{display:flex;flex-direction:column;gap:22px}
+#gated.locked{opacity:.45;pointer-events:none;user-select:none}
+.issues{border-left:3px solid var(--bad);background:var(--bad-bg);padding:10px 14px;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.issues.soft{border-left-color:var(--head-line);background:var(--head)}
+.issues ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:2px}
+.note.plain{border-left-color:var(--accent);background:var(--surface);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);justify-content:flex-start}
+.warnline{color:var(--bad);font-weight:600}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--band);color:var(--band-ink);font-weight:600}
+tr.head td{background:var(--head);font-weight:600}
+td.txt{text-align:left}
+dl{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:6px 14px;margin:0;font-size:.9rem}
+dt{font-weight:600} dd{margin:0}
+dd ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:2px}
+#props-wrap{display:flex;flex-direction:column;gap:14px}
+.props{display:flex;flex-direction:column;gap:16px}
+.route{display:flex;flex-direction:column}
+.route h3{padding-bottom:6px;border-bottom:2px solid var(--accent)}
+.prop{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.prop-h{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:baseline;justify-content:space-between}
+.prop-h strong{flex:1 1 320px;min-width:0}
+.prop dl{font-size:.86rem;grid-template-columns:minmax(110px,200px) minmax(0,1fr);gap:3px 12px}
+.prop-a{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center}
+table.entry td{padding:4px 6px}
+table.entry input{min-width:84px}
+table.entry td:first-child{white-space:nowrap;font-weight:600;position:sticky;left:0;background:var(--surface);z-index:1}
+table.entry th:first-child{position:sticky;left:0;z-index:1}
+.charts{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr))}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figcaption{font-weight:600;font-size:.9rem}
+.legend{display:flex;gap:4px 14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{display:inline-block;width:14px;height:12px;border-radius:2px;flex:none}
+.sw.actual{background:var(--actual)}
+.sw.plan{border:1px solid var(--plan);background:repeating-linear-gradient(45deg,var(--plan) 0 2px,var(--surface) 2px 5px)}
+.sw.est{height:0;width:18px;border-radius:0;border-top:2px dashed var(--plan)}
+.chart{position:relative;min-width:0}
+.chart svg{display:block;max-width:100%}
+.chart text{font-family:var(--text);font-size:11px;fill:var(--muted)}
+.chart text.sub{font-size:10px}
+.chart text.none{font-size:12px}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-size:.8rem;line-height:1.35;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:2;white-space:nowrap}
+.tip b{font-variant-numeric:tabular-nums}
+.tip i{font-style:normal;color:var(--muted)}
+details summary{cursor:pointer;font-family:var(--display);font-weight:600;color:var(--accent)}
+textarea{min-height:170px;font-size:.84rem;font-family:ui-monospace,Menlo,Consolas,monospace}
+footer{font-size:.82rem;color:var(--muted)}
+@media (max-width:520px){ dl,.prop dl{grid-template-columns:minmax(0,1fr);gap:1px 0} dd{margin-bottom:6px} }
+@media (max-width:640px){ input,select,textarea{font-size:16px} textarea{font-size:.84rem} }
+@media (prefers-reduced-motion: no-preference){ button{transition:opacity .15s} button:hover{opacity:.88} }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div><span class="pill">Alpha</span></div>
+    <h1>Estimate the health your climate spending buys</h1>
+    <p>The Climate Health Ledger Project (CHLP) tool turns what an implementer already knows into a cost per disability-adjusted life year (DALY) averted, with a range. It should take about 30 minutes.</p>
+    <p class="muted small">Nothing you type here is stored or sent. To share your entry, copy it at the foot of the page and send it to <a href="mailto:richmond@climatehealthledger.org">richmond@climatehealthledger.org</a>. To carry on later, keep that copy and paste it back into the page. If you are taking part in CHLP's test, send your entry to the same address when you finish. That alone does not put it in CHLP's database: your answers on consent decide that.</p>
+  </div>
+
+  <section aria-labelledby="h-consent">
+    <h2 id="h-consent">First: your permission</h2>
+    <p class="hint">CHLP needs your explicit permission, so the rest of the page opens once each of these three questions has an answer. You can change an answer at any time before you send your entry. Only you can give consent: a funder cannot send your entry or consent for you. Nothing is sent from this page.</p>
+    <p class="small warnline" id="consent-msg" role="status"></p>
+    <div class="grid">
+      <div class="field"><label for="fu-keep">May CHLP keep this entry in its database?</label><select id="fu-keep"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">Entries shared with CHLP are open to anyone. Until its database is online, CHLP sends them on request. CHLP keeps the entry as it was received, with its date. If you answer No, CHLP reads your feedback and keeps no copy of your entry.</span></div>
+      <div class="field"><label for="fu-check">May CHLP check this entry against your records?</label><select id="fu-check"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">A check compares four things with your records. They are the units delivered, the spending, the basis for the share that would have happened anyway, and the fit of the intervention and setting to the factors. Your consent covers the result whatever it shows. You see the result 30 days before it is recorded.</span></div>
+      <div class="field"><label for="fu-report">Would you report actual results a year from now?</label><select id="fu-report"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">CHLP would ask for your tracker figures, to set your estimate beside what happened.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-restore">
+    <details id="restore"><summary id="h-restore">Coming back? Restore a saved entry</summary>
+      <div class="field" style="gap:10px;margin-top:12px">
+        <label for="restore-box">Paste the entry you copied last time, all of it</label>
+        <textarea id="restore-box" style="min-height:90px" autocomplete="off"></textarea>
+        <div class="chips"><button type="button" id="restore-go">Restore my entry</button><span class="small muted" id="restore-msg" role="status"></span></div>
+      </div>
+    </details>
+  </section>
+
+  <section aria-labelledby="h-prog">
+    <h2 id="h-prog">Your program</h2>
+    <div class="grid">
+      <div class="field"><label for="prog">Program name</label><input id="prog" autocomplete="off"></div>
+      <div class="field"><label for="org">Organization</label><input id="org" autocomplete="off"></div>
+      <div class="field"><label for="where">Where it runs</label><input id="where" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <div id="gated">
+  <div class="note" id="example-note">
+    <span id="ex-off"><strong>New here?</strong> Load an example to see how the page works: one hospital with solar-powered oxygen, from a published trial.</span>
+    <span id="ex-on" hidden><strong>An example is loaded:</strong> one hospital with solar-powered oxygen, from a published trial. The ten quarters in its tracker are invented, to show the charts. It is not your data. Clear it before you enter your own.</span>
+    <button type="button" class="quiet" id="ex-load">Load the example</button>
+    <button type="button" class="quiet" id="clear" hidden>Clear the example</button>
+  </div>
+  <div class="note plain" id="undo-bar" role="status" hidden><span id="undo-msg"></span><button type="button" class="quiet sm" id="undo">Undo</button></div>
+
+  <section aria-labelledby="h-phe">
+    <h2 id="h-phe">Possible health effects</h2>
+    <p class="hint">Not sure what your program does for health? Tick each question that fits. The tool lists the health effects to look for, harms as well as benefits. If you already know, skip this step.</p>
+    <div class="qs" id="qs"></div>
+    <div id="props-wrap" hidden>
+      <p class="small"><strong>Possible health effects. Not an estimate.</strong> Each one is a prompt to check. A number appears only where the tool has figures or you enter your own.</p>
+      <div class="props" id="props"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-int">
+    <h2 id="h-int">What your program delivers</h2>
+    <p class="hint">An intervention is what your program delivers, counted in a unit you already record. A pathway is one route from that unit to a health outcome in one group of people. An intervention can have more than one pathway.</p>
+    <div class="field"><label for="intervention">Intervention</label><select id="intervention"></select>
+      <span class="hint">Pick the one that fits your program. If none fits, choose "Your own intervention" and give your own figures.</span></div>
+    <dl id="pinfo"></dl>
+    <div id="extra-box" class="field" style="gap:10px" hidden>
+      <label class="check" for="extra"><input type="checkbox" id="extra"> <span>My program runs in a different setting from these figures</span></label>
+      <div class="field" id="extra-basis-box" hidden><label for="extra-basis">Why the figures should hold in your setting</label><input id="extra-basis" autocomplete="off">
+        <span class="hint">For example the same fuel, a similar climate or a similar level of pollution. Name a measurement that would check it. The result is marked as extrapolated.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-in">
+    <h2 id="h-in">How much you deliver and what it costs</h2>
+    <p class="hint">Give a low, a central and a high figure where you can. A central figure alone also works. Type figures with or without commas; the page adds them. Cells pasted from a spreadsheet fill across.</p>
+    <p class="small" id="in-msg" role="status" hidden></p>
+    <div class="field"><span class="lab">Units delivered a year <span class="cap" id="unitlab"></span></span>
+      <div class="three">
+        <div class="field"><input id="u-low" data-num inputmode="decimal" aria-label="Units delivered a year, low"><span class="cap">Low</span></div>
+        <div class="field"><input id="u-c" data-num inputmode="decimal" aria-label="Units delivered a year, central"><span class="cap">Central</span></div>
+        <div class="field"><input id="u-high" data-num inputmode="decimal" aria-label="Units delivered a year, high"><span class="cap">High</span></div>
+      </div></div>
+    <div class="grid">
+      <div class="field"><label for="years">Years the spending covers</label><input id="years" data-num inputmode="decimal"><span class="hint">The life of the equipment, or the period a total cost covers. Needed with a one-time cost or a total.</span></div>
+      <div class="field"><label for="cf">Share that would have happened anyway, %</label><input id="cf" data-num inputmode="decimal"><span class="hint" id="cfhint">Leave blank to use the intervention's default.</span></div>
+    </div>
+    <div class="field">
+      <fieldset><legend class="lab">How do you have your costs?</legend><label><input type="radio" name="mode" id="mode-split" value="split"> One-time and running costs</label>
+        <label><input type="radio" name="mode" id="mode-total" value="total"> One total for the whole period</label></fieldset>
+      <span class="hint">Count only spending above what would have happened anyway. Enter a saving as a negative number.</span></div>
+    <div id="split" class="field" style="gap:12px">
+      <div class="field"><span class="lab">One-time cost, $</span><div class="three">
+        <div class="field"><input id="one-low" data-num data-neg inputmode="text" aria-label="One-time cost, low"><span class="cap">Low</span></div>
+        <div class="field"><input id="one-c" data-num data-neg inputmode="text" aria-label="One-time cost, central"><span class="cap">Central</span></div>
+        <div class="field"><input id="one-high" data-num data-neg inputmode="text" aria-label="One-time cost, high"><span class="cap">High</span></div></div></div>
+      <div class="field"><span class="lab">Running cost a year, $</span><div class="three">
+        <div class="field"><input id="run-low" data-num data-neg inputmode="text" aria-label="Running cost a year, low"><span class="cap">Low</span></div>
+        <div class="field"><input id="run-c" data-num data-neg inputmode="text" aria-label="Running cost a year, central"><span class="cap">Central</span></div>
+        <div class="field"><input id="run-high" data-num data-neg inputmode="text" aria-label="Running cost a year, high"><span class="cap">High</span></div></div></div>
+    </div>
+    <div id="total" class="field" style="gap:12px" hidden>
+      <div class="field"><span class="lab">Total cost over those years, $</span><div class="three">
+        <div class="field"><input id="tot-low" data-num data-neg inputmode="text" aria-label="Total cost, low"><span class="cap">Low</span></div>
+        <div class="field"><input id="tot-c" data-num data-neg inputmode="text" aria-label="Total cost, central"><span class="cap">Central</span></div>
+        <div class="field"><input id="tot-high" data-num data-neg inputmode="text" aria-label="Total cost, high"><span class="cap">High</span></div></div></div>
+      <div class="field"><label for="disc">Is that total already discounted?</label>
+        <select id="disc"><option value="No">No, a simple sum</option><option value="Yes">Yes, a present value at 3% or a similar rate</option></select>
+        <span class="hint">If unsure, choose No. A purchase made at the start belongs under one-time cost.</span></div>
+    </div>
+    <div id="ownbox" class="field" style="gap:12px" hidden>
+      <div class="field"><span class="lab">Your own intervention: outcome per unit</span><div class="three">
+        <div class="field"><input id="own-low" data-num inputmode="decimal" aria-label="Outcome per unit, low"><span class="cap">Low</span></div>
+        <div class="field"><input id="own-c" data-num inputmode="decimal" aria-label="Outcome per unit, central"><span class="cap">Central</span></div>
+        <div class="field"><input id="own-high" data-num inputmode="decimal" aria-label="Outcome per unit, high"><span class="cap">High</span></div></div>
+        <span class="hint">For example, deaths averted per person reached.</span></div>
+      <div class="grid">
+        <div class="field"><label for="own-d">DALYs per outcome</label><input id="own-d" data-num inputmode="decimal"></div>
+        <div class="field"><label for="own-route">Route to health</label><select id="own-route"></select></div>
+      </div>
+      <div class="grid">
+        <div class="field"><label for="own-words">Unit and outcome, in words</label><input id="own-words" autocomplete="off"></div>
+        <div class="field"><label for="own-src">Source of these figures</label><input id="own-src" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="own-kind">How your unit is counted</label>
+        <select id="own-kind"><option value="once">Counted once, when delivered: people treated, tons abated</option><option value="service">In service over time: vehicles, stoves, buildings</option></select>
+        <span class="hint">This sets how the Tracker credits health. A unit in service is credited a quarter of a year for each quarter.</span></div>
+    </div>
+    <details id="emis"><summary>Emissions (optional)</summary>
+      <div class="field" style="gap:12px;margin-top:12px">
+        <div class="field"><label for="e-direct">Net change in emissions a year, metric tons CO2e, if already worked out</label><input id="e-direct" data-num data-neg inputmode="text"><span class="hint">A reduction is a negative number. Use this, or the fuel and power fields below.</span></div>
+        <div class="grid">
+          <div class="field"><label for="e-diesel">Diesel burned, change a year</label><input id="e-diesel" data-num data-neg inputmode="text"><span class="hint">A fall is a negative number.</span></div>
+          <div class="field"><label for="e-unit">Diesel unit</label><select id="e-unit"><option value="gallons">gallons</option><option value="liters">liters</option></select></div>
+          <div class="field"><label for="e-grid">Grid electricity, change a year, kWh</label><input id="e-grid" data-num data-neg inputmode="text"></div>
+          <div class="field"><label for="e-gf">Grid factor, kg CO2e per kWh</label><input id="e-gf" data-num inputmode="decimal"><span class="hint">Blank uses the US average. Elsewhere, enter your grid's figure.</span></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section aria-labelledby="h-res">
+    <h2 id="h-res">Result</h2>
+    <div aria-live="polite" aria-atomic="true"><div class="cap" id="bigcap">Cost per DALY averted, central case</div><div class="big" id="big">&nbsp;</div></div>
+    <div class="chips" id="chips"></div>
+    <div class="issues" id="iss-est" role="status" hidden></div>
+    <div class="scroll"><table>
+      <thead><tr><th scope="col">Quantity</th><th scope="col">Best case</th><th scope="col">Central</th><th scope="col">Worst case</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <dl id="meta"></dl>
+    <p class="small"><strong id="label-line">Your own modeled estimate. CHLP has not checked it.</strong> That label goes with the result wherever it goes.</p>
+    <p class="hint" id="hc-note" hidden>Health-care and productivity costs avoided: a working figure that CHLP has not assessed. It is new cases of childhood asthma avoided for each electric bus, times a published cost for one case, spread over the years the spending covers at 3%. It comes from a different model from the DALY figure, so the two should not be added.</p>
+    <p class="small" id="open-line">Every result shows its inputs, sources and factors, so whoever reads it can check it. Entries shared with CHLP are open to anyone.</p>
+  </section>
+
+  <section aria-labelledby="h-trk">
+    <h2 id="h-trk">Tracker: what happened, quarter by quarter</h2>
+    <p class="hint">Use this after a quarter has ended. Record what you delivered and spent, and the page sets it beside your estimate. Health is modeled from the units you delivered, with the factors above. The page stores nothing: copy your entry at the foot of the page to keep it, and paste it back next quarter to carry on.</p>
+    <p class="small" id="t-closed" hidden></p>
+    <div id="t-body" style="display:flex;flex-direction:column;gap:14px">
+    <p class="small" id="t-kind"></p>
+    <div class="grid" style="max-width:300px">
+      <div class="field"><label for="t-year">First year</label><input id="t-year" inputmode="numeric" autocomplete="off"><span class="hint">For example 2027. The quarters are then named 2027 Q1, 2027 Q2 and onward.</span></div>
+    </div>
+    <div class="scroll"><table class="entry" id="t-in"></table></div>
+    <div class="chips"><button type="button" class="quiet sm" id="t-add">Add a year</button><span class="hint">One-time spending is spread over the years, as in your estimate. Give your own plan for a quarter only if your work is seasonal. Cells pasted from a spreadsheet fill across and down.</span></div>
+    <p class="small" id="t-msg" role="status" hidden></p>
+    <div class="issues" id="iss-trk" role="status" hidden></div>
+    <details id="t-more"><summary>Emissions and measured health data (optional)</summary>
+      <div class="scroll" style="margin-top:12px"><table class="entry" id="t-in2"></table></div>
+    </details>
+    <p class="hint" id="t-empty">Nothing is recorded yet. Enter the units delivered in a quarter to see the comparison and the charts.</p>
+    <div id="t-out" style="display:flex;flex-direction:column;gap:14px" hidden>
+      <h3>To date</h3>
+      <div class="scroll"><table id="t-sum"></table></div>
+      <p class="small"><strong>Modeled from the units you delivered, with your estimate's factors. CHLP has not checked it.</strong></p>
+      <div class="charts">
+        <figure><figcaption id="cap-units">Units delivered in each quarter</figcaption>
+          <div class="legend"><span><i class="sw plan"></i>Plan</span><span><i class="sw actual"></i>What happened</span></div>
+          <div class="chart" id="c-units"></div></figure>
+        <figure><figcaption>DALYs averted to date, central case</figcaption>
+          <div class="legend"><span><i class="sw plan"></i>Plan</span><span><i class="sw actual"></i>What happened</span></div>
+          <div class="chart" id="c-dalys"></div></figure>
+        <figure><figcaption>Cost per DALY to date, as a multiple of your estimate</figcaption>
+          <div class="legend"><span><i class="sw actual"></i>What happened</span><span><i class="sw est"></i>Your estimate (1.0)</span></div>
+          <div class="chart" id="c-cost"></div></figure>
+        <figure><figcaption>DALYs averted in each year, central case</figcaption>
+          <div class="legend"><span><i class="sw plan"></i>Plan</span><span><i class="sw actual"></i>What happened</span></div>
+          <div class="chart" id="c-year"></div></figure>
+      </div>
+      <p class="hint">Hatched bars and the dashed line are your plan or estimate. Solid bars are what happened. A year with fewer than four quarters recorded says so under its name, and is set beside the plan for the whole year. Every figure in the charts is in the tables.</p>
+      <h3>By year</h3>
+      <div class="scroll"><table id="t-by"></table></div>
+      <p class="hint">A year with fewer than four quarters recorded is set beside the plan for the whole year. The plan to date counts every quarter up to the last one recorded.</p>
+      <details><summary>Every quarter, as a table</summary>
+        <div class="scroll" style="margin-top:12px"><table id="t-q"></table></div>
+      </details>
+    </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fu">
+    <h2 id="h-fu">Follow-up contact, and how you use the result</h2>
+    <div class="grid">
+      <div class="field"><label for="fu-contact">Contact for the follow-up</label><input id="fu-contact" autocomplete="off"><span class="hint">Name and email. Held apart from the entry, never published, and deleted on request.</span></div>
+    </div>
+    <h3 id="h-use">How you use the result</h3>
+    <div class="field"><label for="use-funders">Which funders do you report to, and in what form does each one ask for results?</label><input id="use-funders" autocomplete="off"><span class="hint">For example: a state agency, tons of pollutant cut each year, on its own form.</span></div>
+    <div class="field"><label for="use-prop">Has this result gone into a proposal or a report? If so, how did the funder respond?</label><input id="use-prop" autocomplete="off"><span class="hint">Leave blank if it has not. CHLP asks again a year from now.</span></div>
+  </section>
+
+  <section aria-labelledby="h-fb">
+    <h2 id="h-fb">Feedback on the tool</h2>
+    <div class="grid">
+      <div class="field"><label for="fb-min">Minutes it took</label><input id="fb-min" data-num inputmode="decimal"></div>
+      <div class="field"><label for="fb-dec">Would this result change a decision you face?</label><select id="fb-dec"><option value=""></option><option>Yes</option><option>No</option><option>Maybe</option></select></div>
+    </div>
+    <div class="field"><label for="fb-miss">Inputs you could not supply</label><input id="fb-miss" autocomplete="off"></div>
+    <div class="field"><label for="fb-unclear">What was unclear</label><input id="fb-unclear" autocomplete="off"></div>
+    <div class="field"><label for="fb-which">Which decision, and when it is due</label><input id="fb-which" autocomplete="off"></div>
+    <div class="field"><label for="fb-bus">School bus programs only: how many miles a year does each bus run, and in which years were the buses built?</label><input id="fb-bus" autocomplete="off"><span class="hint">The tool assumes 12,000 miles a year and a bus built before 2007.</span></div>
+  </section>
+
+  <section aria-labelledby="h-entry">
+    <h2 id="h-entry">Your entry</h2>
+    <p class="hint">This is everything above as plain text. To share it, copy it and send it to <a href="mailto:richmond@climatehealthledger.org">richmond@climatehealthledger.org</a>. Sharing is optional. Only you can send your entry and give consent for it, and you can ask for it to be anonymized. Copy my entry keeps your work so that you can carry on later. Copy to send to CHLP works once the three questions on consent are answered.</p>
+    <div><button type="button" id="copy">Copy my entry</button> <span class="small muted" id="copied" role="status"></span></div>
+    <div><button type="button" id="send-copy">Copy to send to CHLP</button> <span class="small" id="send-msg" role="status"></span></div>
+    <textarea id="entry" readonly aria-label="Your entry as text"></textarea>
+  </section>
+
+  <section aria-labelledby="h-fac">
+    <details><summary id="h-fac">The factors behind each intervention</summary>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        <p class="small">Each default comes from a CHLP workbook, or is marked as a working figure that CHLP has not yet assessed. One-time costs are spread at 3% a year.</p>
+        <div class="scroll"><table id="ftable"></table></div>
+        <dl id="consts"></dl>
+      </div>
+    </details>
+  </section>
+
+    </div>
+  <footer>Alpha 0.10, November 11, 2026, built from the CHLP spreadsheet, version 0.14. A test version: figures and wording may change.</footer>
+</div>
+
+<script>
+const F = {"rows": [{"name": "School bus electrification, United States", "unit": "electric school buses in service in place of diesel buses", "low": 0.5, "central": 0.75, "high": 1, "outcome": "share of the modeled effect that is causal", "dalys": 0.00205801427651703, "cf": 0, "co2": 0, "note": "One electric bus in place of a new diesel bus. Counts the children aboard and the community along the route, which carries about 94% of the benefit (Model C54). Enter 14 years, the bus life in the assessment, and only the cost above a new diesel bus. The base case retires a bus emitting 0.300 g of PM2.5 a mile with 7 years of life left; which bus is retired moves the result most, and this entry takes the base bus only.", "source": "School bus assessment, workbook N2 v0.14: Model C22 over C21 (DALYs a year per bus before the causal discount, spread over the 14-year life at 3%); Parameters C22 (causal share 0.75, range 0.5 to 1)", "alt": "Against $10.2 million per DALY for the base bus at September 2026 prices (N2 Model C39): on a bus built before 2007, an exhaust particulate filter with a crankcase filter, about $0.7 million at a cost of about $10,000, a working figure that serves riders and the community; retiring the oldest diesel bus first, $5.3 million (Model C40); cabin air filters, about $3.1 million, for the children aboard only (Comparator C26 times Parameters C80). None clears the bar.", "status": "From a CHLP workbook already issued", "sector": "Transport", "setting": "United States", "kind": "In service", "left": "Nitrogen oxides. Effects on school attendance and learning. A published estimate that also counts nitrogen oxides finds about four times as many deaths for each bus (Proceedings of the National Academy of Sciences 2024), so this figure is cautious.", "counted": [{"route": "indoor", "name": "Indoor and in-vehicle air", "text": "Children with asthma aboard: asthma made worse by the bus's own exhaust inside the cabin"}, {"route": "outdoor", "name": "Outdoor air", "text": "People along the route: early deaths from fine particles (PM2.5) in the exhaust"}], "life": 14, "us": true, "tonsLow": 0.00224802395359034, "tonsCentral": 0.00224802395359034, "tonsHigh": 0.00224802395359034, "hcPV": 453.512278481013, "hcNote": "The row above is CHLP's working figure, built from two published sources (Factors tab, last block)."}, {"name": "School bus cabin air filters, United States", "unit": "diesel school buses fitted with high-efficiency cabin filters", "low": 0.5, "central": 0.75, "high": 1, "outcome": "share of the modeled effect that is causal", "dalys": 0.000192715258487004, "cf": 0, "co2": 0, "note": "High-efficiency cabin air filters on one diesel school bus. Counts the children aboard only; the community along the route gains nothing. Enter 14 years, as the assessment does. It assumes filters are changed and units run, which the assessment flags as unmeasured (Comparator B43).", "source": "School bus assessment, workbook N2 v0.14: Comparator C22 (DALYs a year per bus before the causal discount); Parameters C22 (causal share 0.75, range 0.5 to 1)", "alt": "On a bus built before 2007, an exhaust particulate filter with a crankcase filter: about $0.7 million per DALY against $3.1 million, a working figure, and it serves the community along the route as well.", "status": "From a CHLP workbook already issued", "sector": "Transport", "setting": "United States", "kind": "In service", "left": "People along the route, since the exhaust is unchanged. Nitrogen oxides. Effects on school attendance and learning.", "counted": [{"route": "indoor", "name": "Indoor and in-vehicle air", "text": "Children with asthma aboard: asthma made worse by the bus's own exhaust inside the cabin"}], "life": 14, "us": true, "tonsLow": 0, "tonsCentral": 0, "tonsHigh": 0, "hcPV": null, "hcNote": null}, {"name": "School bus exhaust and crankcase filters, United States", "unit": "diesel school buses built before 2007, fitted with both filters", "low": 0.00142908474263811, "central": 0.00240062821340137, "high": 0.00347497212394231, "outcome": "DALY averted a year, per bus", "dalys": 1, "cf": 0, "co2": 0, "note": "A working figure that CHLP has not yet assessed. An exhaust particulate filter and a crankcase filter on one diesel bus built before 2007, which has neither. Low: half the modeled effect is causal and the exhaust filter removes 80% of tailpipe particulates. Central: 75% and 90%. High: all of it and 98%. The pair is credited with removing the bus's own pollution from the cabin. Enter the years the bus has left (7 in the assessment's base case). No carbon saving. Buses from 2007 on carry a factory filter.", "source": "School bus assessment, workbook N2 v0.14: Model C16 (community DALYs a year, base bus) and C11 (children aboard). Exhaust filter 80% to 98%, and the cabin result: Southern Alliance for Clean Energy 2006; Clean Air Task Force 2005.", "alt": "None costed. An oxidation catalyst with a crankcase filter costs less a bus (up to $4,000) and reads about $0.9 million per DALY, also a working figure.", "status": "Working figure: CHLP has not yet assessed it", "sector": "Transport", "setting": "United States; diesel buses built before 2007", "kind": "In service", "left": "Nitrogen oxides. Effects on school attendance and learning.", "counted": [{"route": "indoor", "name": "Indoor and in-vehicle air", "text": "Children with asthma aboard: asthma made worse by the bus's own exhaust inside the cabin"}, {"route": "outdoor", "name": "Outdoor air", "text": "People along the route: early deaths from fine particles (PM2.5) in the exhaust"}], "life": null, "us": true, "tonsLow": 0.00317465566560294, "tonsCentral": 0.0035714876238033, "tonsHigh": 0.0038889531903636, "hcPV": null, "hcNote": null}, {"name": "School bus catalyst and crankcase filter, United States", "unit": "diesel school buses with 1994 to 2006 engines, fitted with a catalyst and a crankcase filter", "low": 0.000392946998849159, "central": 0.00071792104799584, "high": 0.00181389839547513, "outcome": "DALY averted a year, per bus", "dalys": 1, "cf": 0, "co2": 0, "note": "A working figure that CHLP has not yet assessed. An oxidation catalyst and a crankcase filter on one diesel bus with a 1994 to 2006 engine. Low: half the modeled effect is causal and the catalyst removes 20% of tailpipe particulates. Central: 75% and 25%. High: all of it and 50%. The crankcase filter is credited with the crankcase share of the bus's own cabin pollution (6.8 of 7.9 micrograms per cubic meter). A UCLA study of 24 buses found no clear cabin gain from this pair, so the cabin term may overstate. Enter the years the bus has left. No carbon saving.", "source": "School bus assessment, workbook N2 v0.14: Model C16 and C11; References B15 (Liu and others 2010, the crankcase share). Catalyst 20% to 50%: Southern Alliance for Clean Energy 2006; 25%: EPA release of September 28, 2015. Cabin caution: Zhang 2012 (UCLA).", "alt": "On the same bus, an exhaust particulate filter with a crankcase filter: about $0.7 million per DALY against about $0.9 million, also a working figure.", "status": "Working figure: CHLP has not yet assessed it", "sector": "Transport", "setting": "United States; diesel buses with 1994 to 2006 engines", "kind": "In service", "left": "Nitrogen oxides. Effects on school attendance and learning.", "counted": [{"route": "indoor", "name": "Indoor and in-vehicle air", "text": "Children with asthma aboard: asthma made worse by the bus's own exhaust inside the cabin"}, {"route": "outdoor", "name": "Outdoor air", "text": "People along the route: early deaths from fine particles (PM2.5) in the exhaust"}], "life": null, "us": true, "tonsLow": 0.000793663916400734, "tonsCentral": 0.000992079895500918, "tonsHigh": 0.00198415979100184, "hcPV": null, "hcNote": "One study, and no figure from CHLP. Beatty and Shimshack (Journal of Health Economics 2011) studied this pair of devices on school buses around Puget Sound, Washington, from hospital records for 1996 to 2006. For an average district with 25 buses fitted, at $62,500, they estimate about 18 fewer hospital stays a year among children, worth $54,900 to $128,100 in health-care costs. The estimate comes from eight districts, and the authors say its pneumonia part is not robust. It is far larger than the effect that CHLP's assessment models. The tool computes nothing from it."}, {"name": "Livestock ammonia abated, United States", "unit": "metric tons of NH3 abated a year", "low": 1, "central": 1, "high": 1, "outcome": "metric ton of NH3 abated", "dalys": 0.131766088745225, "cf": 0, "co2": 3.52827373612824, "note": "DALYs per metric ton from US marginal damage. No range in the register. Set your own share that would have happened anyway.", "source": "Ammonia workbook v0.8, Model M3 (DALYs) and M19 (CO2e)", "alt": null, "status": "From a CHLP workbook already issued", "sector": "Farming, land and fire", "setting": "United States, national average", "kind": "Counted once", "left": "Animal welfare, which the assessment reports separately. The figure is an average over a large region and does not hold for a named place without a local model run.", "counted": [{"route": "outdoor", "name": "Outdoor air", "text": "People downwind: early deaths from fine particles (PM2.5) formed from ammonia"}], "life": null, "us": true, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}, {"name": "Livestock ammonia abated, global average", "unit": "metric tons of NH3 abated a year", "low": 1, "central": 1, "high": 1, "outcome": "metric ton of NH3 abated", "dalys": 0.354333776055503, "cf": 0, "co2": 3.52827373612824, "note": "DALYs per metric ton, global average. No range in the register. Set your own share that would have happened anyway.", "source": "Ammonia workbook v0.8, Model M7 (DALYs) and M19 (CO2e)", "alt": null, "status": "From a CHLP workbook already issued", "sector": "Farming, land and fire", "setting": "Global average", "kind": "Counted once", "left": "Animal welfare, which the assessment reports separately. The figure is a global average and does not hold for a named place without a local model run.", "counted": [{"route": "outdoor", "name": "Outdoor air", "text": "People downwind: early deaths from fine particles (PM2.5) formed from ammonia"}], "life": null, "us": false, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}, {"name": "Solar-powered oxygen, one hospital", "unit": "children with low blood oxygen treated a year", "low": 0.00434782608695652, "central": 0.0222222222222222, "high": 0.0357142857142857, "outcome": "child's death averted", "dalys": 87.306, "cf": 0.5, "co2": 0, "note": "One death averted per 45 children treated, the trial's number needed to treat, with the workbook's range of 28 to 230. Four of the trial's ten time-trend models were not significant.", "source": "Solar oxygen workbook v0.4, Parameters 10 (number needed to treat) and 12 (87.306 years of life lost per child death); Model row 9 (50% counterfactual)", "alt": null, "status": "From a CHLP workbook already issued", "sector": "Health facilities", "setting": "Uganda, the trial's setting; the assessment applies it to hospitals in sub-Saharan Africa", "kind": "Counted once", "left": "Patients other than the children treated. Any change in the air where the panels replace a diesel generator.", "counted": [{"route": "care", "name": "Clinical care", "text": "Children admitted with low blood oxygen: deaths averted"}], "life": null, "us": false, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}, {"name": "Heat plan, adults 65 and older", "unit": "heat deaths a year in the area served", "low": 0.06, "central": 0.1, "high": 0.152, "outcome": "heat death averted", "dalys": 16.13, "cf": 0.5, "co2": 0, "note": "Low: the top of what controlled studies report for warnings alone. Central: CHLP's judgment, with no controlled study from India. High: the low end reported for warnings with a funded response.", "source": "Heat workbook v1.0, Inputs I19 (DALYs per death), I21 to I23 (shares), I25 (counterfactual)", "alt": null, "status": "From a CHLP workbook already issued", "sector": "Heat and early warning", "setting": "Cities in India; the shares of deaths averted come from controlled studies in high-income cities", "kind": "Not delivered", "left": "People under 65.", "counted": [{"route": "heat", "name": "Heat", "text": "Adults 65 and older in the area served: heat deaths averted"}], "life": null, "us": false, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}, {"name": "Heat plan, all ages, South Asia", "unit": "heat deaths a year in the area served", "low": 0.06, "central": 0.1, "high": 0.152, "outcome": "heat death averted", "dalys": 32.3440919742098, "cf": 0.5, "co2": 0, "note": "As above, with DALYs per death for all ages in South Asia.", "source": "Heat workbook v1.0, Inputs I20 to I23, I25", "alt": null, "status": "From a CHLP workbook already issued", "sector": "Heat and early warning", "setting": "South Asia; the shares of deaths averted come from controlled studies in high-income cities", "kind": "Not delivered", "left": "No group is left out.", "counted": [{"route": "heat", "name": "Heat", "text": "People of all ages in the area served: heat deaths averted"}], "life": null, "us": false, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}, {"name": "Your own intervention", "unit": "the unit you name on the Inputs tab", "low": null, "central": null, "high": null, "outcome": "the outcome you name", "dalys": null, "cf": null, "co2": 0, "note": "Give your own figures and their source on the Inputs tab. Results from this row are flagged as using your own factors.", "source": "Yours", "alt": null, "status": "Yours", "sector": "", "setting": "", "kind": "", "left": "", "counted": [], "life": null, "us": false, "tonsLow": null, "tonsCentral": null, "tonsHigh": null, "hcPV": null, "hcNote": null}], "ef": {"Emission factors for fuel and power": null, "Diesel, kg CO2 per gallon": 10.21, "US grid average, kg CO2e per kWh": 0.349674358033, "Diesel, kg CO2 per liter": 2.6971966545767, "US yardstick, $ per DALY": 726000}, "pm": {"Miles a year, per bus": 12000, "Tailpipe PM2.5 of the bus retired or fitted, grams a mile": 0.3, "Tailpipe PM2.5 of a new diesel bus, grams a mile": 0.01, "Years the old bus has left": 7, "Life of an electric bus, years": 14, "Grams in a short ton": 907185, "Base bus: tailpipe PM2.5 a year, short tons": 0.00396831958200367, "Electric bus: tailpipe PM2.5 cut a year, short tons, as a yearly equivalent": 0.00224802395359034}, "hc": {"New cases of childhood asthma avoided for each electric bus": 0.00742, "Cost of one case of childhood asthma, $ at 2015 prices": 45000, "Consumer price index, 2025 over 2015": 1.35822784810127, "Costs avoided for each electric bus, present value, $ at 2025 prices": 453.512278481013}, "rate": 0.03, "bar": 100, "own": "Your own intervention", "sectors": ["Transport", "Homes and buildings", "Power and industry", "Farming, land and fire", "Waste", "Health facilities", "Heat and early warning"], "routes": [{"id": "outdoor", "name": "Outdoor air", "q": "Does the program change what is burned outdoors, or how much? For example engines, power plants, kilns, fields or waste."}, {"id": "indoor", "name": "Indoor and in-vehicle air", "q": "Does it change the air inside a home, a vehicle or a workplace? For example stoves, heating, filters or ventilation."}, {"id": "heat", "name": "Heat", "q": "Does it change how hot people get, or warn them of heat? For example roofs, trees, cooling or alerts."}, {"id": "care", "name": "Clinical care", "q": "Does it supply power or equipment to a clinic or hospital? For example oxygen, cold storage or lighting."}, {"id": "diet", "name": "Diet, food and water", "q": "Does it change what people eat or drink, or how a food crop is grown or watered?"}, {"id": "activity", "name": "Physical activity and road injury", "q": "Does it change how people travel, or how much they walk and cycle?"}, {"id": "infect", "name": "Infectious disease", "q": "Does it create, drain or move standing water? For example a reservoir, a canal or a pond."}], "proposals": [{"route": "outdoor", "what": "Diesel school buses replaced with electric buses, or fitted with exhaust filters", "who": "People who live along the route", "outcome": "Early deaths from fine particles (PM2.5) in the exhaust", "count": "Buses replaced or fitted, and the years each old bus had left", "direction": "Benefit", "status": "Figures in the tool", "basis": "CHLP assessment: school bus electrification, United States. The two filter options are working figures.", "entries": ["School bus electrification, United States", "School bus exhaust and crankcase filters, United States", "School bus catalyst and crankcase filter, United States"]}, {"route": "outdoor", "what": "Other vehicles or engines switched from diesel or petrol: electric buses, three-wheelers and two-wheelers, or generators replaced by solar power", "who": "People on the street and living nearby", "outcome": "Early deaths from fine particles (PM2.5)", "count": "Vehicles or generators replaced, and the distance or hours each one runs", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, rows 10 and 21 to 23. For generators, a 2026 review found nine studies and no causal estimate.", "entries": []}, {"route": "outdoor", "what": "Coal plants retired early or displaced by renewable power; cleaner brick kilns", "who": "People downwind of the plant or kiln", "outcome": "Early deaths from fine particles (PM2.5)", "count": "Tons of coal no longer burned, or kilns converted", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, rows 4, 8 and 9.", "entries": []}, {"route": "outdoor", "what": "Crop residue no longer burned in the field", "who": "People downwind, in cities included", "outcome": "Early deaths from smoke", "count": "Hectares no longer burned", "direction": "Benefit", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: crop residue burning, northwest India.", "entries": []}, {"route": "outdoor", "what": "Peat fires prevented, or household waste no longer burned in the open", "who": "People downwind", "outcome": "Early deaths from smoke", "count": "Hectares protected, or tons of waste collected", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, rows 7 and 14.", "entries": []}, {"route": "outdoor", "what": "Burning moved to another season, such as early dry season burning of savanna for carbon credits", "who": "Towns within reach of the smoke", "outcome": "Early deaths from smoke, where the season's smoke rises", "count": "Hectares burned in each season, and the people within reach", "direction": "Either way", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: savanna fire management, Australia. The direction is unresolved.", "entries": []}, {"route": "outdoor", "what": "Wood pellets burned for home heating under a renewable energy subsidy", "who": "The household and its neighbors", "outcome": "Early deaths from fine particles (PM2.5)", "count": "Homes heated with pellets", "direction": "Harm", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: pellet heating.", "entries": []}, {"route": "outdoor", "what": "Methane leaks repaired, or landfill gas captured", "who": "People across whole regions, since methane forms ozone far from its source", "outcome": "Early deaths from ozone, through chronic lung disease", "count": "Metric tons of methane abated", "direction": "Benefit", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: negative-cost methane.", "entries": []}, {"route": "outdoor", "what": "Ammonia cut from livestock farming", "who": "People downwind", "outcome": "Early deaths from fine particles (PM2.5) formed from ammonia", "count": "Metric tons of ammonia abated", "direction": "Benefit", "status": "Figures in the tool", "basis": "CHLP assessment: ammonia from intensive livestock farming.", "entries": ["Livestock ammonia abated, United States", "Livestock ammonia abated, global average"]}, {"route": "indoor", "what": "Diesel school buses replaced, or fitted with cabin air filters or exhaust filters", "who": "Children with asthma who ride the bus", "outcome": "Asthma made worse by exhaust inside the cabin", "count": "Buses replaced or fitted", "direction": "Benefit", "status": "Figures in the tool", "basis": "CHLP assessment: school bus electrification, United States. The two exhaust filter options are working figures.", "entries": ["School bus electrification, United States", "School bus cabin air filters, United States", "School bus exhaust and crankcase filters, United States", "School bus catalyst and crankcase filter, United States"]}, {"route": "indoor", "what": "Cleaner cooking stoves and fuels", "who": "Women and young children in the home", "outcome": "Pneumonia in young children; heart and lung disease in adults", "count": "Households using the stove, with fuel use measured", "direction": "Benefit", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: clean cooking transition. A trial that gave 3,200 women free gas stoves and fuel found no clear health gain.", "entries": []}, {"route": "indoor", "what": "Gas stoves replaced with electric stoves", "who": "Children in the home", "outcome": "Childhood asthma", "count": "Homes converted", "direction": "Benefit", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: gas stove electrification, United States. It computes no cost per DALY.", "entries": []}, {"route": "indoor", "what": "Home heating switched from coal to gas, electricity or a cleaner fuel", "who": "The household, and the city in winter", "outcome": "Lung and heart disease", "count": "Homes converted", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, rows 16 to 18. In Ulaanbaatar the pollution fell and children's hospital admissions did not.", "entries": []}, {"route": "heat", "what": "A heat action plan, or heat warnings with a funded response", "who": "Adults 65 and older, or people of all ages", "outcome": "Heat deaths", "count": "Heat deaths a year in the area served, before the plan", "direction": "Benefit", "status": "Figures in the tool", "basis": "CHLP heat model, built for cities in India. Elsewhere the figures are extrapolated.", "entries": ["Heat plan, adults 65 and older", "Heat plan, all ages, South Asia"]}, {"route": "heat", "what": "Cool roofs", "who": "People who live or work under the roof", "outcome": "Heat deaths and heat illness", "count": "Square meters of roof treated, and the people under them", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, row 12.", "entries": []}, {"route": "heat", "what": "Trees and green space in cities", "who": "Residents of the greened area", "outcome": "Heat deaths", "count": "Trees planted and kept alive", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, row 13.", "entries": []}, {"route": "heat", "what": "Rest, shade and water for outdoor workers", "who": "Outdoor workers", "outcome": "Kidney injury and heat illness", "count": "Workers covered", "direction": "Benefit", "status": "In CHLP's register; not yet assessed", "basis": "CHLP register, row 30. The evidence is weak: one study site, with no comparison group.", "entries": []}, {"route": "care", "what": "Solar-powered oxygen at a hospital", "who": "Children admitted with low blood oxygen", "outcome": "Child deaths", "count": "Children with low blood oxygen treated a year", "direction": "Benefit", "status": "Figures in the tool", "basis": "CHLP assessment: solar-powered oxygen, from a trial in Uganda.", "entries": ["Solar-powered oxygen, one hospital"]}, {"route": "diet", "what": "Rice paddies drained for part of the season to earn methane credits", "who": "People who eat the rice", "outcome": "Cancers from arsenic in the grain, which falls; cadmium in the grain is not yet counted", "count": "Hectares under the practice, and crops a year", "direction": "Either way", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: rice methane credits and arsenic. The direction is unresolved.", "entries": []}, {"route": "diet", "what": "Diets changed to cut emissions from food", "who": "The people whose diet changes", "outcome": "Diet-related disease", "count": "People whose diet changed, and by how much", "direction": "Benefit", "status": "Not yet assessed by CHLP", "basis": "A 2024 review of 200 actions in The Lancet Planetary Health reports the greatest health benefits from changes in diet and clean cookstoves.", "entries": []}, {"route": "activity", "what": "Bikeways and walking routes", "who": "People who start to walk or cycle regularly", "outcome": "Deaths averted by regular physical activity", "count": "New regular walkers and cyclists", "direction": "Benefit", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: active travel, United States.", "entries": []}, {"route": "activity", "what": "The same routes, counted for road injury", "who": "The same people", "outcome": "Injuries and deaths in traffic", "count": "Injuries before and after", "direction": "Either way", "status": "Not yet assessed by CHLP", "basis": "CHLP's active travel assessment does not yet count injury.", "entries": []}, {"route": "infect", "what": "Dams and reservoirs, for hydropower or water storage", "who": "People who live beside the reservoir", "outcome": "Schistosomiasis, a parasitic disease carried by water snails", "count": "People living near the shore, and infection rates before and after filling", "direction": "Harm", "status": "Assessed by CHLP; figures not yet in the tool", "basis": "CHLP assessment: hydropower and schistosomiasis, Africa. Studies put the disease at about 2.5 times its usual rate beside reservoirs.", "entries": []}], "statuses": [["Figures in the tool", "Pick the intervention and the tool estimates it."], ["Assessed by CHLP; figures not yet in the tool", "CHLP has a workbook on it. For now, enter your own figures."], ["In CHLP's register; not yet assessed", "CHLP has a first scan or a published figure. Enter your own figures."], ["Not yet assessed by CHLP", "A question to check. Enter your own figures if you have them."]], "tool": "Figures in the tool", "kindNote": {"Counted once": "Counted once, when delivered. In the Tracker, record the units delivered in each quarter.", "In service": "In service over time, and counted every year. In the Tracker, record how many were in service in each quarter; each is credited a quarter of a year.", "Not delivered": "Not something a program delivers: the heat deaths expected in the area in a year, before the plan. The Tracker is closed for this intervention."}, "closed": "The Tracker is closed for heat plans in this version. Their unit is the heat deaths expected in the area before the plan, which a program does not deliver or record each quarter. A later version will give heat plans a unit a program delivers.", "discounting": "Costs and health are both discounted at 3% a year. With the same health in every year, that equals the yearly cost over the yearly DALYs, which is what the tool computes. The years of life lost within one death are not discounted, as in the Global Burden of Disease study."};
+const BAR = F.bar, US = F.ef["US yardstick, $ per DALY"], EFG = F.ef["Diesel, kg CO2 per gallon"], EFL = F.ef["Diesel, kg CO2 per liter"], EFGRID = F.ef["US grid average, kg CO2e per kWh"];
+const OWN = F.own, SERVICE = "In service", BASE = "Not delivered", SAVES = "Saves money", NOPM = "No PM2.5 is cut";
+const OPEN186 = "Every result shows its inputs, sources and factors, so whoever reads it can check it. Entries shared with CHLP are open to anyone.";
+const $ = id => document.getElementById(id);
+const txt = id => $(id).value.trim();
+const N = v => v === null ? 0 : v;
+const or = (v, c) => v === null ? c : v;
+const has = v => v !== null && v !== undefined;
+const isNum = v => typeof v === "number";
+// Money in full, for the copied entry; and rounded to three significant figures from $1,000 up, for the screen (ruling 163).
+const moneyFull = v => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: Math.abs(v) < 100 && Math.abs(v) % 1 ? 2 : 0, maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 });
+const round3 = v => { const a = Math.abs(v); if (a < 1000) return v; const k = Math.pow(10, Math.floor(Math.log10(a)) - 2); return Math.round(v / k) * k; };
+const money = v => moneyFull(round3(v));
+const sig = v => { if (v === 0) return "0"; const a = Math.abs(v); const d = a >= 100 ? 0 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6; return v.toLocaleString("en-US", { maximumFractionDigits: d }); };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const routeName = id => (F.routes.find(r => r.id === id) || {}).name || "";
+const applied = new Set();   // indexes of the possible health effects the user ticked as applying
+let exampleOn = false, undoState = null, dirty = false, copiedAt = "";
+
+// ---------- Reading a typed figure (repair 4) ----------
+// Returns { v, st, why }: st is "blank", "ok", "ask" (read, with a question) or "bad" (not read, so left out and marked).
+const MINUS = /[\u2212\u2012\u2013\u2014\uFE63\uFF0D]/g, SPACE = /[\s\u00A0\u2007\u2009\u202F]/g;
+function clean(raw, pct) {
+  let s = String(raw).trim().replace(MINUS, "-").replace(SPACE, "").replace(/\$/g, "");
+  if (pct) s = s.replace(/%$/, "");
+  const br = s.match(/^\((.+)\)$/); if (br) s = "-" + br[1];
+  return s;
+}
+function readNum(raw, opt) {
+  opt = opt || {};
+  if (String(raw).trim() === "") return { v: null, st: "blank" };
+  const s = clean(raw, opt.pct);
+  if (!/^[+-]?(\d{1,3}(,\d{2,3})*,\d{3}|\d+)(\.\d*)?$/.test(s) && !/^[+-]?\.\d+$/.test(s))
+    return { v: null, st: "bad", why: /\d,\d/.test(s) ? "is not read: use a point for decimals, and a comma only between thousands" : "is not read as a number" };
+  const v = Number(s.replace(/,/g, "").replace(/^\+/, ""));
+  if (!Number.isFinite(v)) return { v: null, st: "bad", why: "is not read as a number" };
+  if (v < 0 && !opt.neg) return { v: null, st: "bad", why: "is below zero, which this field does not take" };
+  if (/^[+-]?[1-9]\d{0,2}\.\d{3}$/.test(s)) return { v, st: "ask", why: "is read as " + v + ". If you meant " + Math.round(v * 1000).toLocaleString("en-US") + ", type it without the point" };
+  return { v, st: "ok" };
+}
+const optOf = e => ({ pct: e.id === "cf", neg: e.hasAttribute("data-neg") });
+const numState = id => readNum($(id).value, optOf($(id)));
+const num = id => numState(id).v;
+const triple = b => [num(b + "-low"), num(b + "-c"), num(b + "-high")];
+const NUMS = () => [...document.querySelectorAll(".wrap input[data-num]")];
+// Thousands separators in a figure the page can read; anything else is left as typed.
+const withCommas = (raw, opt) => {
+  const st = readNum(raw, opt); if (st.v === null) return raw;
+  const s = clean(raw, opt && opt.pct).replace(/,/g, "").replace(/^\+/, ""), neg = s.startsWith("-"), parts = (neg ? s.slice(1) : s).split(".");
+  return (neg ? "-" : "") + (parts[0] || "0").replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (parts.length > 1 ? "." + parts[1] : "");
+};
+function commaAll() { NUMS().forEach(e => { const f = withCommas(e.value, optOf(e)); if (f !== e.value) e.value = f; }); }
+
+// ---------- The estimate ----------
+function badRange(base, name, iss) {   // a low figure above its central figure, or a high figure below it (repair 8)
+  const [lo, c, hi] = triple(base); let bad = false; if (c === null) return false;
+  if (lo !== null && lo > c) { iss.push({ id: base + "-low", lev: "bad", text: name + ": the low figure is above the central figure." }); bad = true; }
+  if (hi !== null && hi < c) { iss.push({ id: base + "-high", lev: "bad", text: name + ": the high figure is below the central figure." }); bad = true; }
+  return bad;
+}
+function compute() {
+  const p = F.rows.find(r => r.name === $("intervention").value) || null;
+  const own = !!p && p.name === OWN, iss = [];
+  const years = num("years"), r = F.rate;
+  const ann = years > 0 ? r / (1 - Math.pow(1 + r, -years)) : 0;
+  const mode = $("mode-total").checked ? "total" : "split";
+  let cost = null, costHow = "No cost entered", costIn = false, needYears = false, rangeBad = false;
+  if (mode === "split") {
+    const o = triple("one"), rn = triple("run");
+    if (o[1] !== null || rn[1] !== null) {
+      costIn = true; costHow = "One-time and running costs";
+      needYears = o.some(v => v !== null && v !== 0) && !(years > 0);          // a one-time cost needs the years it covers (repair 1)
+      if (!needYears) cost = [N(or(o[0], o[1])) * ann + N(or(rn[0], rn[1])), N(o[1]) * ann + N(rn[1]), N(or(o[2], o[1])) * ann + N(or(rn[2], rn[1]))];
+    }
+    if (badRange("one", "One-time cost", iss)) rangeBad = true;
+    if (badRange("run", "Running cost a year", iss)) rangeBad = true;
+  } else {
+    const t = triple("tot"), disc = $("disc").value === "Yes";
+    if (t[1] !== null) {
+      costIn = true; costHow = disc ? "One total, already discounted" : "One total, a simple sum";
+      needYears = !(years > 0);                                               // so does a total
+      if (!needYears) { const spread = disc ? ann : 1 / years; cost = [or(t[0], t[1]) * spread, t[1] * spread, or(t[2], t[1]) * spread]; }
+    }
+    if (badRange("tot", "Total cost", iss)) rangeBad = true;
+  }
+  const u = triple("u");
+  const units = u[1] === null ? null : [or(u[2], u[1]), u[1], or(u[0], u[1])];
+  if (badRange("u", "Units delivered a year", iss)) rangeBad = true;
+  let out = null, dpo = null;
+  if (own) {
+    const oc = triple("own");
+    if (oc[1] !== null) out = [or(oc[2], oc[1]), oc[1], or(oc[0], oc[1])];
+    dpo = num("own-d");
+    if (badRange("own", "Outcome per unit", iss)) rangeBad = true;
+  } else if (p) { out = [p.high, p.central, p.low]; dpo = p.dalys; }
+  // The share that would have happened anyway: 0 up to, but not including, 100 (repair 9)
+  const cfS = numState("cf"); let cf = p && p.cf != null ? p.cf : 0, cfBad = false;
+  if (cfS.st !== "blank") { if (cfS.v !== null && cfS.v < 100) cf = cfS.v / 100; else { cf = null; cfBad = true; } }
+  if (cfS.v !== null && cfS.v >= 100) iss.push({ id: "cf", lev: "bad", text: "Share that would have happened anyway: enter a percent from 0 to 99." });
+  else if (cfS.v !== null && cfS.v > 0 && cfS.v < 1) iss.push({ id: "cf", lev: "ask", text: `Share that would have happened anyway: "${txt("cf")}" is read as ${cfS.v}%. If you meant ${Math.round(cfS.v * 100)}%, type ${Math.round(cfS.v * 100)}.` });
+  let dalys = null, cpd = [null, null, null];
+  if (units && out && dpo !== null && cf !== null) {
+    dalys = [0, 1, 2].map(i => units[i] * out[i] * dpo * (1 - cf));
+    if (cost) cpd = dalys.map((d, i) => d > 0 ? (cost[i] < 0 ? SAVES : cost[i] / d) : null);    // a net saving is named, with no ratio (repair 3)
+  }
+  // Tons of PM2.5 cut a year and the cost for each short ton (spreadsheet version 0.10): school bus entries only. Best case: the high count and the high tons.
+  // The share that would have happened anyway comes off the tons, as it comes off the DALYs.
+  const tf = p && !own && p.tonsCentral != null ? [p.tonsHigh, p.tonsCentral, p.tonsLow] : null;
+  let tons = null, cpt = [null, null, null];
+  if (tf && units && cf !== null) {
+    tons = [0, 1, 2].map(i => units[i] * tf[i] * (1 - cf));
+    cpt = tons.map((t, i) => t > 0 ? (cost ? (cost[i] < 0 ? SAVES : cost[i] / t) : null) : (units[1] > 0 ? NOPM : null));
+  }
+  // Health-care and productivity costs avoided a year (spreadsheet version 0.11, ruling 194): school bus electrification only, a working figure.
+  const hf = p && !own && p.hcPV != null ? p.hcPV : null;
+  const hc = hf !== null && units && cf !== null && years > 0 ? [0, 1, 2].map(i => units[i] * hf * ann * (1 - cf)) : null;
+  const eD = num("e-direct"), eF = num("e-diesel"), eG = num("e-grid"), gf = num("e-gf");
+  const perUnit = p ? (p.co2 || 0) : 0;
+  let emis = null;
+  if (eD !== null || eF !== null || eG !== null || perUnit !== 0) {
+    const fuel = eD !== null ? eD : N(eF) * ($("e-unit").value === "liters" ? EFL : EFG) / 1000 + N(eG) * (gf !== null ? gf : EFGRID) / 1000;
+    emis = [0, 1, 2].map(i => -(units ? units[i] : 0) * perUnit + fuel);
+  }
+  const def = cpd.map(v => v !== null);
+  const hasRange = !!cost && !!dalys && (cost[2] > cost[0] || dalys[0] > dalys[2]);
+  const complete = def.every(Boolean) && hasRange && !rangeBad;
+  const why = !p ? "Choose an intervention" : !units ? "Enter the units delivered" : !costIn ? "Enter a cost" : needYears ? "Enter the years the spending covers"
+    : cfBad ? "Enter the share that would have happened anyway, from 0 to 99" : (own && (!out || dpo === null)) ? "Enter your own outcome per unit and DALYs per outcome"
+    : (dalys && !(dalys[1] > 0)) ? "The DALYs averted are zero or less: check the units and the share" : null;
+  if (needYears) iss.push({ id: "years", lev: "bad", text: "Years the spending covers: a one-time cost or a total needs them." });
+  if (p && p.life && years > 0 && years !== p.life) iss.push({ id: "years", lev: "ask", text: `Years the spending covers: this intervention's factors assume ${p.life} years. Your ${years} is used.` });
+  const extra = !!p && !own && $("extra").checked;
+  const harm = [...applied].some(i => F.proposals[i].direction === "Harm");
+  const kind = !p ? "" : own ? ($("own-kind").value === "service" ? SERVICE : "Counted once") : p.kind;
+  const usShow = !p || extra ? "" : own ? "own" : p.us ? "us" : "";                // the US yardstick shows for an entry set in the United States (ruling 161)
+  const counted = !p ? "" : own ? ("Your own" + ($("own-route").value ? ". Route to health: " + routeName($("own-route").value) : "; route to health not named")) : p.counted.map((c, i) => `${i + 1}. ${c.name}. ${c.text}.`).join(" ");
+  const setting = !p ? "" : own ? "Your own figures" : extra ? `Extrapolated from: ${p.setting}. Your basis: ${txt("extra-basis") || "none given"}` : `As the figures: ${p.setting}`;
+  const label = (extra ? "Your own modeled estimate, extrapolated from another setting. CHLP has not checked it." : "Your own modeled estimate. CHLP has not checked it.") + (harm ? " A possible harm is marked and is not counted." : "");
+  return { p, own, ann, cost, costHow, units, out, dpo, cf, dalys, cpd, tf, tons, cpt, hf, hc, def, emis, complete, hasRange, rangeBad, why, iss, extra, harm, kind, usShow, counted, setting, label };
+}
+// The bar, in three readings (ruling 161): every case under; the central case under and the worst above; above.
+function barReading(m) {
+  const under = i => m.cpd[i] === SAVES || (isNum(m.cpd[i]) && m.cpd[i] <= BAR), b = "the bar of about " + moneyFull(BAR);
+  if (!under(1)) return ["Above " + b, "", "above"];
+  if (!(m.def[0] && m.def[2] && m.hasRange)) return ["At or under " + b, "ok", "at or under"];
+  return under(2) ? ["Every case is at or under " + b, "ok", "every case at or under"] : ["Central case at or under " + b + "; worst case above it", "", "central case at or under; worst case above"];
+}
+const usUnder = m => m.cpd[1] === SAVES || m.cpd[1] <= US;
+
+function render() {
+  const m = compute(), p = m.p, t = track(m), issues = collect(m, t);
+  $("split").hidden = $("mode-total").checked; $("total").hidden = !$("mode-total").checked;
+  $("ownbox").hidden = !m.own;
+  $("extra-box").hidden = !p || m.own; $("extra-basis-box").hidden = !m.extra;
+  $("unitlab").textContent = p && !m.own ? "(" + p.unit + ")" : "";
+  $("cfhint").textContent = p && !m.own && p.cf != null ? "Default for this intervention: " + Math.round(p.cf * 100) + "%. Leave blank to use it." : "Leave blank for 0%.";
+  $("pinfo").innerHTML = p && !m.own
+    ? `<dt>Sector</dt><dd>${esc(p.sector)}</dd><dt>Pathways counted</dt><dd><ol>${p.counted.map(c => `<li><strong>${esc(c.name)}.</strong> ${esc(c.text)}.</li>`).join("")}</ol></dd><dt>Not counted</dt><dd>${esc(p.left)}</dd><dt>Setting of the figures</dt><dd id="p-setting">${esc(p.setting)}</dd><dt>How the unit is counted</dt><dd id="p-kind">${esc(F.kindNote[p.kind] || "")}</dd><dt>What it assumes</dt><dd>${esc(p.note)}</dd><dt>Source</dt><dd>${esc(p.source)}</dd><dt>Status of the factors</dt><dd>${esc(p.status)}</dd>`
+    : (m.own ? "<dt>Your own factors</dt><dd>Enter your figures and their source below, and name the route to health. The result will say that it uses your figures in place of CHLP's defaults.</dd>" : "");
+  const c = m.cpd[1], saving = c === SAVES;
+  $("bigcap").textContent = saving ? `Central case: a yearly saving of ${money(-m.cost[1])}, with ${sig(m.dalys[1])} DALYs averted a year` : "Cost per DALY averted, central case";
+  $("big").textContent = saving ? "Saves money and averts DALYs" : c !== null ? money(c) : (m.why || "Needs more inputs");
+  const chips = [];
+  if (c !== null) {
+    const b = barReading(m);
+    chips.push(`<span class="chip ${b[1]}" id="chip-bar">${b[0]}</span>`);
+    if (m.usShow) chips.push(`<span class="chip ${m.usShow === "own" ? "plain" : usUnder(m) ? "ok" : ""}" id="chip-us">${m.usShow === "own" ? "If in the United States: " + (usUnder(m) ? "at or under" : "above") : (usUnder(m) ? "At or under" : "Above")} the US yardstick of ${moneyFull(US)}</span>`);
+    chips.push(`<span class="chip ${m.complete ? "ok" : m.rangeBad ? "bad" : ""}" id="chip-range">${m.complete ? "Complete, with a range" : m.rangeBad ? "Check the range" : "No range yet: add a low or a high"}</span>`);
+  }
+  if (m.extra) chips.push(`<span class="chip" id="chip-extra">Extrapolated from another setting</span>`);
+  if (m.harm) chips.push(`<span class="chip bad" id="chip-harm">A possible harm is marked and not counted</span>`);
+  const nIss = issues.est.length + issues.trk.length;
+  if (nIss) chips.push(`<span class="chip ${issues.est.concat(issues.trk).some(x => x.lev === "bad") ? "bad" : ""}" id="chip-check">${nIss} ${nIss === 1 ? "entry" : "entries"} to check${issues.trk.length && issues.est.length ? ", " + issues.trk.length + " in the Tracker" : issues.trk.length ? ", in the Tracker" : ""}</span>`);
+  $("chips").innerHTML = chips.join("");
+  showIssues("iss-est", issues.est);
+  const cell = (key, i, v, f) => `<td id="r-${key}-${i}" data-v="${v === SAVES ? "saves" : has(v) ? v : ""}">${v === SAVES ? SAVES : has(v) ? f(v) : ""}</td>`;
+  const row = (label, vals, f, cls, key) => `<tr${cls ? ' class="' + cls + '"' : ""}><td>${label}</td>` + [0, 1, 2].map(i => cell(key, i, vals ? vals[i] : null, f)).join("") + "</tr>";
+  const tcell = (key, i, v, f) => `<td id="r-${key}-${i}" data-v="${v === SAVES ? "saves" : isNum(v) ? v : ""}">${isNum(v) ? f(v) : has(v) ? esc(v) : ""}</td>`;
+  const trow = (label, vals, f, key) => `<tr id="row-${key}"><td>${label}</td>` + [0, 1, 2].map(i => tcell(key, i, vals ? vals[i] : null, f)).join("") + "</tr>";
+  $("rows").innerHTML =
+    row("Annual cost", m.cost, money, "", "cost") +
+    row("Units delivered a year", m.units, sig, "", "units") +
+    row("Outcome per unit" + (p && !m.own && p.outcome ? ": " + esc(p.outcome) : ""), m.out, sig, "", "out") +
+    row("DALYs per outcome", m.dpo !== null ? [m.dpo, m.dpo, m.dpo] : null, sig, "", "dpo") +
+    row("Share that would have happened anyway", p && m.cf !== null ? [m.cf, m.cf, m.cf] : null, v => Math.round(v * 100) + "%", "", "cf") +
+    row("DALYs averted a year", m.dalys, sig, "", "dalys") +
+    row("Cost per DALY averted", m.cpd, money, "head", "cpd") +
+    `<tr><td>Net change in emissions a year, metric tons CO2e</td>` + [0, 1, 2].map(i => `<td id="r-emis-${i}" data-v="${m.emis ? m.emis[i] : ""}">${m.emis ? sig(m.emis[i]) : "Not given"}</td>`).join("") + "</tr>" +
+    (m.tf ? trow("PM2.5 cut a year, short tons", m.tons, sig, "tons") + trow("Cost for each short ton of PM2.5 cut", m.cpt, money, "cpt") : "") +
+    (m.hf !== null ? trow("Health-care and productivity costs avoided a year, at 2025 prices", m.hc, moneyFull, "hc") : "");
+  $("hc-note").hidden = m.hf === null;
+  $("meta").innerHTML = p ? `<dt>Pathways counted</dt><dd id="m-counted">${esc(m.counted)}</dd><dt>Not counted</dt><dd>${esc(m.own ? "Anything you do not enter" : p.left)}</dd><dt>Setting of the figures</dt><dd id="m-setting">${esc(m.setting)}</dd><dt>How the cost was entered</dt><dd id="m-cost">${esc(m.costHow)}</dd><dt>Factors used</dt><dd>${m.own ? "Your own figures, in place of CHLP's defaults" : esc(p.status)}</dd><dt>Cheaper alternative on record</dt><dd>${esc(p.alt || "None on record for this intervention")}</dd><dt>Health-care costs: evidence on record</dt><dd id="m-hcnote">${esc(p.hcNote || "None on record for this intervention")}</dd><dt>The comparison</dt><dd id="m-compare">The bar of about ${moneyFull(BAR)} per DALY is the one CHLP tests against. It is the bar implied by Coefficient Giving's request for proposals.${m.usShow ? " The US yardstick is a rough comparison for programs in the United States; the bar stays as it is." : ""} Figures of $1,000 and more are rounded to three significant figures here; the copied entry has every digit.</dd>` : "";
+  $("label-line").textContent = m.label;
+  renderTracker(m, t, issues.trk);
+  $("entry").value = entryText(m, t, issues);
+  showStatus();
+  showConsent(CONSENT_IDS.some(j => $(j).classList.contains("flag")));
+}
+
+// ---------- Entries to check (repairs 4, 8, 9, 10 and 11) ----------
+const TCOL = { u: "units", one: "one-time spending", run: "running spending", plan: "your own plan", em: "emissions", h: "measured health data" };
+function labelOf(id) {
+  const q = id.match(/^t-([a-z]+)-(\d+)$/); if (q) return qName(+q[2]) + ", " + TCOL[q[1]];
+  const e = $(id), l = document.querySelector('label[for="' + id + '"]');
+  return (e.getAttribute("aria-label") || (l ? l.textContent : id)).replace(/, %$/, "");
+}
+function collect(m, t) {
+  const est = [], trk = [];
+  NUMS().forEach(e => {
+    const s = readNum(e.value, optOf(e)), off = s.st === "bad" || s.st === "ask";
+    e.classList.toggle("flag", off); if (s.st === "bad") e.setAttribute("aria-invalid", "true"); else e.removeAttribute("aria-invalid");
+    if (off) (e.id.startsWith("t-") ? trk : est).push({ id: e.id, lev: s.st, text: `${labelOf(e.id)}: "${e.value.trim()}" ${s.why}.` });
+  });
+  m.iss.forEach(x => { est.push(x); $(x.id).classList.add("flag"); if (x.lev === "bad") $(x.id).setAttribute("aria-invalid", "true"); });
+  const y = txt("t-year"), yBad = y !== "" && !yearOK();
+  $("t-year").classList.toggle("flag", yBad);
+  if (yBad) trk.push({ id: "t-year", lev: "bad", text: `First year: "${y}" is not read as a year. Type four digits, such as 2027.` });
+  if (!t.closed) t.q.forEach(x => {
+    const fix = t.svc ? "Type how many were in service, or 0 if none were" : "Type the units, or 0 if nothing was delivered";
+    if (x.check === "nounits") { trk.push({ id: "t-u-" + x.i, lev: "bad", text: `${x.name} has spending and no units. ${fix}.` }); $("t-u-" + x.i).classList.add("flag"); }
+    if (x.check === "gap") { trk.push({ id: "t-u-" + x.i, lev: "bad", text: `${x.name} is blank and a later quarter is recorded. The plan to date counts it and the cost does not. ${fix}, with the spending.` }); $("t-u-" + x.i).classList.add("flag"); }
+  });
+  return { est, trk };
+}
+function showIssues(id, list) {
+  const box = $(id); box.hidden = list.length === 0; box.classList.toggle("soft", !list.some(x => x.lev === "bad"));
+  box.innerHTML = list.length ? `<strong>${list.length === 1 ? "One entry to check" : list.length + " entries to check"}</strong><ul>` + list.slice(0, 12).map(x => `<li>${esc(x.text)}</li>`).join("") + (list.length > 12 ? `<li>And ${list.length - 12} more.</li>` : "") + "</ul>" : "";
+}
+
+function yesRoutes() { return F.routes.filter(r => $("q-" + r.id).checked); }
+function renderProps() {
+  const yes = yesRoutes();
+  $("props-wrap").hidden = yes.length === 0;
+  const dirClass = d => d === "Benefit" ? "ok" : d === "Harm" ? "bad" : "";
+  $("props").innerHTML = yes.map(rt => `<div class="route"><h3>${esc(rt.name)}</h3>` + F.proposals.map((x, i) => x.route !== rt.id ? "" : `<div class="prop">
+      <div class="prop-h"><strong>${esc(x.what)}</strong><span class="chips"><span class="chip ${dirClass(x.direction)}">${esc(x.direction)}</span><span class="chip plain">${esc(x.status)}</span></span></div>
+      <dl><dt>Who is affected</dt><dd>${esc(x.who)}</dd><dt>Health outcome to look for</dt><dd>${esc(x.outcome)}</dd><dt>What to count</dt><dd>${esc(x.count)}</dd><dt>Basis</dt><dd>${esc(x.basis)}</dd></dl>
+      <div class="prop-a"><label class="check" for="ap-${i}"><input type="checkbox" id="ap-${i}" data-ap="${i}"${applied.has(i) ? " checked" : ""}> <span>This applies to my program</span></label>` +
+        (x.direction === "Harm" ? `<span class="hint">This version does not estimate a harm. Tick the box and the result says that a possible harm is marked and not counted.</span>`
+          : x.entries.length ? x.entries.map(e => `<button type="button" class="quiet sm" data-use="${esc(e)}">Use: ${esc(e)}</button>`).join("")
+          : `<button type="button" class="quiet sm" data-own="${i}">Enter my own figures</button>`) +
+      `</div></div>`).join("") + `</div>`).join("");
+}
+
+// ---------- Tracker: the spreadsheet's Tracker tab (version 0.9), quarter by quarter ----------
+const NQ = 20, NY = 5, TF = ["u", "one", "run", "plan", "em", "h", "src"];
+const TRACK_IDS = ["t-year"]; for (let i = 0; i < NQ; i++) TF.forEach(k => TRACK_IDS.push("t-" + k + "-" + i));
+let shownYears = 1, lastTrack = null;
+const yearOK = () => { const y = txt("t-year"); return /^\d{4}$/.test(y) && +y >= 1900 && +y <= 2200; };
+const yName = y => yearOK() ? String(+txt("t-year") + y) : "Year " + (y + 1);
+const qName = i => yName(Math.floor(i / 4)) + " Q" + (i % 4 + 1);
+
+function track(m) {
+  const closed = m.kind === BASE, svc = m.kind === SERVICE, w = svc ? 0.25 : 1;            // a unit in service is credited a quarter of a year (repair 6)
+  const years = num("years"), planQ = years > 0 ? Math.ceil(years * 4 - 1e-9) : NQ;
+  const per = m.out && m.dpo !== null && m.cf !== null ? m.out.map(o => o * m.dpo * (1 - m.cf) * w) : null;    // DALYs for each unit in a quarter: best, central, worst
+  const unitPlan = m.units ? (svc ? m.units[1] : m.units[1] / 4) : 0;
+  const share = ($("mode-total").checked && num("tot-c") !== null) ? ($("disc").value === "Yes" ? m.ann : (years > 0 ? 1 / years : 0)) : m.ann;
+  const est = isNum(m.cpd[1]) ? m.cpd[1] : null;
+  const q = [], tot = { n: 0, e: 0, u: 0, pu: 0, d: [0, 0, 0], pd: 0, c: 0, em: null, h: 0 };
+  let last = -1; if (!closed) for (let i = 0; i < NQ; i++) if (num("t-u-" + i) !== null) last = i;
+  let cumOne = 0, cU = 0, cPU = 0, nP = 0, cD = 0, cPD = 0, cC = 0;
+  for (let i = 0; i < NQ; i++) {
+    const u = closed ? null : num("t-u-" + i), one = num("t-one-" + i), run = num("t-run-" + i), own = num("t-plan-" + i), em = num("t-em-" + i), h = num("t-h-" + i);
+    const inPlan = !closed && i < planQ, rec = u !== null, elapsed = i <= last;
+    const plan = inPlan ? (own !== null ? own : unitPlan) : null, planD = plan !== null && per ? plan * per[1] : null;
+    cumOne += N(one);
+    const cost = rec ? (share > 0 ? cumOne * share / 4 : N(one)) + N(run) : null;
+    const d = rec && per ? [u * per[2], u * per[1], u * per[0]] : null;                    // low, central, high
+    if (inPlan) { nP++; cPU += plan; if (planD !== null) cPD += planD; }
+    if (rec) { cU += u; cC += cost; tot.n++; tot.u += u; tot.c += cost; if (d) { cD += d[1]; d.forEach((v, k) => tot.d[k] += v); } }
+    if (elapsed) { tot.e++; if (plan !== null) tot.pu += plan; if (planD !== null) tot.pd += planD; }     // the plan to date counts a blank quarter before a recorded one (repair 11)
+    if (em !== null) tot.em = N(tot.em) + em;
+    if (h !== null) tot.h++;
+    const check = closed || rec ? "" : (N(one) !== 0 || N(run) !== 0) ? "nounits" : elapsed ? "gap" : "";
+    const toDate = rec && per && cD > 0 ? (cC < 0 ? SAVES : cC / cD) : null;
+    q.push({ i, name: qName(i), rec, u, plan, planD, cost, d, check, cpd: rec && d && d[1] > 0 ? (cost < 0 ? SAVES : cost / d[1]) : null,
+             uTo: rec ? (svc ? cU / tot.n : cU) : null, puTo: inPlan ? (svc ? cPU / nP : cPU) : null,
+             dTo: rec && per ? cD : null, pdTo: inPlan && per ? cPD : null, toDate, mult: isNum(toDate) && est ? toDate / est : null });
+  }
+  const sum = (a, f) => a.reduce((s, x) => s + f(x), 0), by = [];
+  for (let y = 0; y < NY; y++) {
+    const r = q.slice(4 * y, 4 * y + 4), rc = r.filter(x => x.rec), pl = r.filter(x => x.plan !== null), pd = r.filter(x => x.planD !== null);
+    const d = rc.length && per ? sum(rc, x => x.d[1]) : null, c = rc.length ? sum(rc, x => x.cost) : null, cpd = d !== null && d > 0 ? (c < 0 ? SAVES : c / d) : null;
+    by.push({ name: yName(y), n: rc.length, u: rc.length ? sum(rc, x => x.u) / (svc ? rc.length : 1) : null, pu: pl.length ? sum(pl, x => x.plan) / (svc ? pl.length : 1) : null,
+              d, pd: pd.length ? sum(pd, x => x.planD) : null, c, cpd, mult: isNum(cpd) && est ? cpd / est : null });
+  }
+  return { q, by, tot, per, planQ, est, closed, svc, uAct: tot.n ? (svc ? tot.u / tot.n : tot.u) : 0, uPlan: tot.e ? (svc ? tot.pu / tot.e : tot.pu) : 0,
+           planCost: m.cost ? m.cost[1] / 4 * tot.e : null, cpdTo: per && tot.n > 0 && tot.d[1] > 0 ? (tot.c < 0 ? SAVES : tot.c / tot.d[1]) : null,
+           estCell: m.cpd[1], emPlan: m.emis ? m.emis[1] / 4 * tot.n : null, any: tot.n > 0 };
+}
+
+const tcell = (id, v, f, cls) => `<td${id ? ' id="' + id + '"' : ""}${cls ? ' class="' + cls + '"' : ""} data-v="${v === SAVES ? "saves" : has(v) ? v : ""}">${v === SAVES ? SAVES : has(v) ? f(v) : ""}</td>`;
+const ratio = (a, b) => isNum(a) && isNum(b) && b !== 0 ? a / b : null;
+const pct = v => Math.round(v * 100) + "%", x2 = v => v.toFixed(2);
+const TH = s => `<th scope="col">${s}</th>`;
+
+function renderTracker(m, t, list) {
+  lastTrack = t;
+  $("t-closed").hidden = !t.closed; $("t-closed").textContent = t.closed ? F.closed : "";
+  $("t-body").hidden = t.closed;
+  if (t.closed) return t;
+  const unitHead = t.svc ? "Units in service" : "Units delivered";
+  $("t-uhead").textContent = unitHead; $("cap-units").textContent = t.svc ? "Units in service in each quarter" : "Units delivered in each quarter";
+  $("t-kind").textContent = m.p ? (m.own ? "Your unit: " : "This intervention's unit: ") + F.kindNote[m.kind] : "";
+  for (let i = 0; i < NQ; i++) {
+    const hide = i >= shownYears * 4;
+    $("t-row-" + i).hidden = hide; $("t-row2-" + i).hidden = hide;
+    $("t-lab-" + i).textContent = t.q[i].name; $("t-lab2-" + i).textContent = t.q[i].name;
+  }
+  $("t-add").hidden = shownYears >= NY;
+  showIssues("iss-trk", list);
+  $("t-out").hidden = !t.any; $("t-empty").hidden = t.any;
+  if (!t.any) return t;
+  const S = [["Quarters recorded", "n", t.tot.n, t.planQ, null, String], [t.svc ? "Units in service, average" : "Units delivered", "u", t.uAct, t.uPlan, ratio(t.uAct, t.uPlan), sig],
+             ["DALYs averted, central case", "d", t.per ? t.tot.d[1] : null, t.per ? t.tot.pd : null, t.per ? ratio(t.tot.d[1], t.tot.pd) : null, sig],
+             ["Cost on the estimate's basis", "c", t.tot.c, t.planCost, ratio(t.tot.c, t.planCost), money], ["Cost per DALY to date", "cpd", t.cpdTo, t.estCell, ratio(t.cpdTo, t.estCell), money]];
+  $("t-sum").innerHTML = `<thead><tr>${TH("To date")}${TH("Actual")}${TH("Plan")}${TH("Actual over plan")}</tr></thead><tbody>` +
+    S.map(r => `<tr${r[1] === "cpd" ? ' class="head"' : ""}><td>${r[0]}</td>` + tcell("ts-" + r[1] + "-a", r[2], r[5]) + tcell("ts-" + r[1] + "-p", r[3], r[5]) + tcell("ts-" + r[1] + "-r", r[4], pct) + "</tr>").join("") +
+    `<tr><td>DALYs averted, low to high</td><td colspan="3" class="txt" id="ts-range">${t.per ? sig(t.tot.d[0]) + " to " + sig(t.tot.d[2]) : ""}</td></tr>` +
+    `<tr><td>Net change in emissions, metric tons CO2e</td><td id="ts-em-a" data-v="${has(t.tot.em) ? t.tot.em : ""}">${has(t.tot.em) ? sig(t.tot.em) : "Not given"}</td><td>${has(t.emPlan) ? sig(t.emPlan) : "Not given"}</td><td></td></tr>` +
+    `<tr><td>Quarters with measured health data</td><td id="ts-h-a" data-v="${t.tot.h}">${t.tot.h}</td><td></td><td></td></tr></tbody>`;
+  const lastY = Math.max(shownYears, ...t.by.map((b, y) => b.n ? y + 1 : 0));
+  $("t-by").innerHTML = "<thead><tr>" + ["Year", "Quarters recorded", t.svc ? "Units in service, average" : "Units delivered", "Planned units", "DALYs averted", "Planned DALYs averted", "Cost on the estimate's basis", "Cost per DALY", "Multiple of your estimate"].map(TH).join("") + "</tr></thead><tbody>" +
+    t.by.slice(0, lastY).map((b, y) => `<tr><td>${esc(b.name)}</td>` + tcell("ty-n-" + y, b.n, String) + tcell("ty-u-" + y, b.u, sig) + tcell("ty-pu-" + y, b.pu, sig) + tcell("ty-d-" + y, b.d, sig) + tcell("ty-pd-" + y, b.pd, sig) +
+      tcell("ty-c-" + y, b.c, money) + tcell("ty-cpd-" + y, b.cpd, money) + tcell("ty-m-" + y, b.mult, x2) + "</tr>").join("") + "</tbody>";
+  $("t-q").innerHTML = "<thead><tr>" + ["Quarter", unitHead, "Planned units", "DALYs averted", "Planned DALYs averted", "Cost on the estimate's basis", "Cost per DALY in the quarter", "Cost per DALY to date", "Multiple of your estimate"].map(TH).join("") + "</tr></thead><tbody>" +
+    t.q.slice(0, shownYears * 4).map(x => `<tr><td>${esc(x.name)}</td>` + tcell("tq-u-" + x.i, x.u, sig) + tcell("tq-pu-" + x.i, x.plan, sig) + tcell("tq-d-" + x.i, x.d ? x.d[1] : null, sig) + tcell("tq-pd-" + x.i, x.planD, sig) +
+      tcell("tq-c-" + x.i, x.cost, money) + tcell("tq-cpd-" + x.i, x.cpd, money) + tcell("tq-to-" + x.i, x.toDate, money) + tcell("tq-m-" + x.i, x.mult, x2) + "</tr>").join("") + "</tbody>";
+  drawCharts(t);
+  return t;
+}
+
+// ---------- Charts: hatched bars for the plan, solid bars for what happened, a dashed line for the estimate ----------
+function niceStep(v) { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+const axisFmt = v => { const a = Math.abs(v), f = (x, s) => x.toLocaleString("en-US", { maximumFractionDigits: 1 }) + s; return a >= 1e9 ? f(v / 1e9, "B") : a >= 1e6 ? f(v / 1e6, "M") : a >= 1e4 ? f(v / 1e3, "k") : sig(v); };   // short labels, so none is cut off (repair 14)
+function drawChart(id, o) {
+  const box = $(id), n = o.cats.length, vals = [...(o.plan || []), ...(o.actual || []), o.line || 0].filter(v => isNum(v) && isFinite(v));
+  const step = niceStep(Math.max(1e-9, ...vals) / 4), top = Math.max(step, Math.ceil(Math.max(0, ...vals) / step - 1e-9) * step);
+  const ticks = []; for (let k = 0; k * step <= top + 1e-9; k++) ticks.push(k * step);
+  const W = Math.max(260, Math.floor(box.clientWidth || 560)), H = 240, ml = Math.max(40, 12 + 6.4 * Math.max(...ticks.map(v => axisFmt(v).length))), mr = 6, mt = 12, mb = o.years ? 38 : 40;
+  const Y = v => mt + (H - mt - mb) * (1 - v / top), band = (W - ml - mr) / n, two = !!o.plan && !!o.actual, bw = Math.max(2, Math.min(22, band * (two ? 0.36 : 0.56)));
+  const bar = (x, v, kind) => { if (!isNum(v) || !(v > 0)) return ""; const y0 = Y(0), y1 = Y(v), r = Math.min(3, bw / 2, y0 - y1);
+    return `<path d="M${x.toFixed(1)},${y0.toFixed(1)}V${(y1 + r).toFixed(1)}Q${x.toFixed(1)},${y1.toFixed(1)} ${(x + r).toFixed(1)},${y1.toFixed(1)}H${(x + bw - r).toFixed(1)}Q${(x + bw).toFixed(1)},${y1.toFixed(1)} ${(x + bw).toFixed(1)},${(y1 + r).toFixed(1)}V${y0.toFixed(1)}Z" ` +
+      (kind === "plan" ? `fill="url(#${id}-h)" stroke="var(--plan)" stroke-width="1" class="b-plan"` : `fill="var(--actual)" class="b-actual"`) + "/>"; };
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(o.label)}"><defs><pattern id="${id}-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--surface)"/><rect width="2" height="5" fill="var(--plan)"/></pattern></defs>`;
+  ticks.forEach(v => { const y = Y(v).toFixed(1);
+    s += `<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text class="ax" x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle">${esc(axisFmt(v))}</text>`; });
+  for (let i = 0; i < n; i++) { const cx = ml + band * (i + 0.5);
+    s += two ? bar(cx - bw - 1, o.plan[i], "plan") + bar(cx + 1, o.actual[i], "actual") : bar(cx - bw / 2, (o.actual || o.plan)[i], o.actual ? "actual" : "plan");
+    if (o.years) s += `<text x="${cx.toFixed(1)}" y="${H - mb + 15}" text-anchor="middle">${esc(o.cats[i])}</text>` + (o.sub && o.sub[i] ? `<text x="${cx.toFixed(1)}" y="${H - mb + 29}" text-anchor="middle" class="sub">${esc(o.sub[i])}</text>` : "");
+    else { if (band >= 20) s += `<text x="${cx.toFixed(1)}" y="${H - mb + 14}" text-anchor="middle">Q${i % 4 + 1}</text>`;
+      if (i % 4 === 0) s += `<text x="${(ml + band * (i + 2)).toFixed(1)}" y="${H - mb + (band >= 20 ? 30 : 16)}" text-anchor="middle" style="font-weight:600">${esc(yName(i / 4))}</text>` + (i ? `<line x1="${(ml + band * i).toFixed(1)}" x2="${(ml + band * i).toFixed(1)}" y1="${Y(0).toFixed(1)}" y2="${H - 4}" stroke="var(--line)" stroke-width="1"/>` : ""); } }
+  if (has(o.line)) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(o.line).toFixed(1)}" y2="${Y(o.line).toFixed(1)}" stroke="var(--plan)" stroke-width="2" stroke-dasharray="6 4" class="l-est"/>`;
+  s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--muted)" stroke-width="1"/>`;
+  if (!vals.some(v => v > 0)) s += `<text x="${((ml + W - mr) / 2).toFixed(1)}" y="${(H / 2).toFixed(1)}" text-anchor="middle" class="none">${esc(o.none || "Nothing to draw yet")}</text>`;
+  box.innerHTML = s + "</svg>";
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+  box.onpointermove = e => {
+    const r = box.getBoundingClientRect(), x = (e.clientX - r.left) * (W / r.width), i = Math.floor((x - ml) / band);
+    if (i < 0 || i >= n) { tip.hidden = true; return; }
+    const rows = [[o.planName || "Plan", o.plan ? o.plan[i] : null], [o.actualName || "What happened", o.actual ? o.actual[i] : null]].filter(v => isNum(v[1]));
+    if (has(o.line)) rows.push(["Your estimate", o.line]);
+    tip.textContent = ""; const h = document.createElement("div"); h.textContent = o.names[i]; h.style.fontWeight = "600"; tip.appendChild(h);
+    rows.forEach(v => { const d = document.createElement("div"), b = document.createElement("b"), l = document.createElement("i"); b.textContent = (o.fmt || sig)(v[1]); l.textContent = " " + v[0]; d.appendChild(b); d.appendChild(l); tip.appendChild(d); });
+    if (!rows.length) { const d = document.createElement("div"); d.textContent = "Nothing recorded"; tip.appendChild(d); }
+    tip.hidden = false;
+    const tw = tip.offsetWidth, px = e.clientX - r.left;
+    tip.style.left = Math.max(0, Math.min(r.width - tw, px + (px > r.width / 2 ? -tw - 10 : 12))) + "px"; tip.style.top = Math.max(0, e.clientY - r.top - 10) + "px";
+  };
+  box.onpointerleave = () => { tip.hidden = true; };
+}
+function drawCharts(t) {
+  if (!t || !t.any || t.closed || $("t-out").hidden) return;
+  const q = t.q.slice(0, shownYears * 4), cats = q.map(x => x.name), names = cats;
+  drawChart("c-units", { label: "Units in each quarter, plan and actual", cats, names, plan: q.map(x => x.plan), actual: q.map(x => x.u) });
+  drawChart("c-dalys", { label: "DALYs averted to date, plan and actual", cats, names, plan: q.map(x => x.pdTo), actual: q.map(x => x.dTo) });
+  drawChart("c-cost", { label: "Cost per DALY to date as a multiple of the estimate", cats, names, actual: q.map(x => x.mult), line: t.est ? 1 : null, fmt: x2, none: "No ratio to draw: the estimate or the record is a saving, or is not complete" });
+  const lastY = Math.max(shownYears, ...t.by.map((b, y) => b.n ? y + 1 : 0)), by = t.by.slice(0, lastY);
+  drawChart("c-year", { label: "DALYs averted in each year, plan and actual", cats: by.map(b => b.name), names: by.map(b => b.name + (b.n > 0 && b.n < 4 ? ", " + b.n + " of 4 quarters" : "")), years: true,
+                        sub: by.map(b => b.n > 0 && b.n < 4 ? b.n + " of 4 quarters" : ""), plan: by.map(b => b.pd), actual: by.map(b => b.d) });
+}
+
+// ---------- Save and restore: the page stores nothing, so the copied entry carries its own data (repair 7) ----------
+// The data is written in capital letters and the digits 2 to 7 only (base 32), in short lines, with a check value.
+// It is read back ignoring line breaks, spaces, reply marks and case. Entries saved by alpha 0.3 to 0.9 are still read.
+const SEL_IDS = ["intervention", "disc", "e-unit", "fu-report", "fu-keep", "fu-check", "fb-dec", "own-route", "own-kind"];
+const CONSENT_IDS = ["fu-keep", "fu-check", "fu-report"];     // ruling 198: each needs an explicit answer before the entry can be sent
+const blankConsent = () => CONSENT_IDS.filter(i => !$(i).value);
+function showConsent(flag) {   // names the blank answers; marks them once the person has tried to copy the entry for sending
+  const b = blankConsent();
+  $("consent-msg").textContent = b.length ? "Answer needed: " + b.length + " of the three questions on consent still blank. The rest of the page is locked until then." : "";
+  const g = $("gated"); g.inert = b.length > 0; g.classList.toggle("locked", b.length > 0);     // ruling 204: nothing else can be filled in until consent is answered
+  CONSENT_IDS.forEach(i => $(i).classList.toggle("flag", !!flag && !$(i).value));
+  return b;
+}
+const CHECK_IDS = () => ["extra"].concat(F.routes.map(r => "q-" + r.id));
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function b32enc(str) {
+  const bytes = new TextEncoder().encode(str); let bits = 0, val = 0, out = "";
+  for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } val &= (1 << bits) - 1; }
+  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
+  return out;
+}
+function b32dec(s) {
+  let bits = 0, val = 0; const out = [];
+  for (const ch of s) { const k = B32.indexOf(ch); if (k < 0) throw new Error("bad character"); val = (val << 5) | k; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } val &= (1 << bits) - 1; }
+  return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(out));
+}
+const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0").toUpperCase(); };
+function snapshot() {
+  const t = {}, s = {}, c = {};
+  FIELDS.concat(TRACK_IDS).forEach(i => { const v = $(i).value; if (v !== "") t[i] = v; });
+  SEL_IDS.forEach(i => { s[i] = $(i).value; });
+  CHECK_IDS().forEach(i => { if ($(i).checked) c[i] = 1; });
+  return { v: 2, t, s, c, m: $("mode-total").checked ? "total" : "split", a: [...applied].sort((x, y) => x - y), y: shownYears, x: exampleOn ? 1 : 0 };
+}
+const isEmpty = d => Object.keys(d.t).length === 0 && Object.keys(d.c).length === 0 && d.a.length === 0 && !d.s.intervention;
+function saveBlock() {
+  const body = b32enc(JSON.stringify(snapshot())), lines = body.match(/.{1,60}/g) || [];
+  return ["CHLP-SAVE-BEGIN"].concat(lines, "CHLP-SAVE-END " + fnv(body)).join("\n");
+}
+function readSave(text) {   // returns { d } or { err }
+  const m2 = text.match(/CHLP-SAVE-BEGIN([\s\S]*?)CHLP-SAVE-END[^0-9A-Za-z]*([0-9A-Fa-f]{8})?/i);
+  let d;
+  if (m2) {
+    const body = m2[1].toUpperCase().replace(/[^A-Z2-7]/g, "");
+    if (!m2[2]) return { err: "The saved entry is cut short: its check value is missing. Paste the whole entry, down to its last line." };
+    if (fnv(body) !== m2[2].toUpperCase()) return { err: "The saved entry was changed or damaged after it was copied, so it was not restored. Copy it again from where you kept it." };
+    try { d = JSON.parse(b32dec(body)); } catch (e) { return { err: "That saved entry could not be read. Copy it again from where you kept it." }; }
+  } else if (/CHLP-SAVE-BEGIN/i.test(text)) return { err: "The saved entry is cut short: its last line is missing. Paste the whole entry, down to its last line." };
+  else {
+    const m1 = text.match(/CHLP-ENTRY-DATA:(\{.*\})\s*$/m);                    // the form alpha 0.3 and 0.4 wrote
+    if (!m1) return { err: "No saved entry was found in that text. Paste the whole entry, down to its last line." };
+    try { d = JSON.parse(m1[1]); } catch (e) { return { err: "That saved entry could not be read. Copy it again from where you kept it." }; }
+  }
+  const obj = v => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (!obj(d) || (d.v !== 1 && d.v !== 2)) return { err: "That saved entry comes from a version this page cannot read." };
+  if (!obj(d.t) || !obj(d.s)) return { err: "That saved entry could not be read. Copy it again from where you kept it." };
+  return { d };
+}
+function applyState(d) {   // returns the list of things that could not be put back
+  const missed = [], okText = new Set(FIELDS.concat(TRACK_IDS));
+  wipe();
+  Object.keys(d.t).forEach(k => { if (okText.has(k) && typeof d.t[k] === "string") $(k).value = d.t[k].slice(0, 2000); else missed.push("a field this version does not have (" + String(k).slice(0, 30) + ")"); });
+  CONSENT_IDS.forEach(k => { $(k).value = ""; });     // a restored entry carries its own answers on consent, blank ones included
+  SEL_IDS.forEach(k => { const v = d.s[k]; if (v === undefined || v === "") return;
+    if (typeof v === "string" && [...$(k).options].some(o => o.value === v)) $(k).value = v;
+    else missed.push(k === "intervention" ? `the intervention "${String(v).slice(0, 80)}", which is not in this version's menu: choose it again` : "one menu choice (" + k + ")"); });
+  $(d.m === "total" ? "mode-total" : "mode-split").checked = true;
+  CHECK_IDS().forEach(k => { $(k).checked = !!(d.c && d.c[k]); });
+  (Array.isArray(d.a) ? d.a : []).forEach(i => { if (Number.isInteger(i) && i >= 0 && i < F.proposals.length) applied.add(i); else missed.push("one marked health effect"); });
+  shownYears = Math.min(NY, Math.max(1, Number.isInteger(d.y) ? d.y : 1));
+  exampleOn = d.x === 1;
+  commaAll(); renderProps(); render();
+  return missed;
+}
+function restoreEntry(text) {   // returns the message to show; the page is left as it was unless the entry is read in full (repair 16)
+  const r = readSave(text); if (r.err) return { ok: false, msg: r.err };
+  const before = snapshot(), missed = applyState(r.d);
+  offerUndo(before, "Your saved entry replaced what was on the page.");
+  dirty = false; copiedAt = ""; showStatus();
+  return { ok: true, msg: missed.length ? "Restored, except " + missed.slice(0, 4).join("; ") + (missed.length > 4 ? "; and " + (missed.length - 4) + " more" : "") + "." : "Restored. Your entry is back on the page." };
+}
+function offerUndo(before, msg) {
+  if (isEmpty(before)) { undoState = null; $("undo-bar").hidden = true; return; }
+  undoState = before; $("undo-msg").textContent = msg + " "; $("undo-bar").hidden = false;
+}
+
+function entryText(m, t, issues) {
+  const L = [], p = m.p, cf = f => v => v === SAVES ? SAVES : f(v), three = (a, f) => a ? `best ${has(a[0]) ? cf(f)(a[0]) : "blank"}; central ${has(a[1]) ? cf(f)(a[1]) : "blank"}; worst ${has(a[2]) ? cf(f)(a[2]) : "blank"}` : "not computed";
+  const raw = ids => ids.map(i => txt(i) || "blank").join(" / ");
+  L.push("CHLP tool alpha entry (alpha 0.10, from spreadsheet version 0.14)");
+  if (exampleOn) L.push("EXAMPLE: these figures are not a real program's. Clear the example before entering your own.");
+  L.push(CONSENT_IDS.every(i => $(i).value) ? "Consent: all three questions are answered." : "NOT READY TO SEND: " + blankConsent().length + " of the three questions on consent still blank. CHLP does not accept a blank answer.");
+  L.push("Program: " + (txt("prog") || "blank"), "Organization: " + (txt("org") || "blank"), "Where it runs: " + (txt("where") || "blank"), "Intervention: " + (p ? p.name : "none chosen"));
+  if (p) L.push("Sector: " + (m.own ? "not named" : p.sector), "Pathways counted: " + m.counted, "Setting of the figures: " + m.setting, "How the unit is counted: " + m.kind);
+  const yes = yesRoutes();
+  L.push("", "POSSIBLE HEALTH EFFECTS", "Questions answered yes: " + (yes.length ? yes.map(r => r.name).join("; ") : "none (step not used)"));
+  const ap = [...applied].sort((a, b) => a - b).map(i => F.proposals[i]);
+  L.push("Marked as applying to the program: " + (ap.length ? "" : "none"));
+  ap.forEach(x => L.push("  - " + routeName(x.route) + ": " + x.what + " (" + x.direction + "; " + x.status + ")"));
+  L.push("", "INPUTS (low / central / high)", "Units delivered a year: " + raw(["u-low", "u-c", "u-high"]), "Years the spending covers: " + (txt("years") || "blank"));
+  if ($("mode-total").checked) L.push("Total cost over those years, $: " + raw(["tot-low", "tot-c", "tot-high"]), "Already discounted: " + $("disc").value);
+  else L.push("One-time cost, $: " + raw(["one-low", "one-c", "one-high"]), "Running cost a year, $: " + raw(["run-low", "run-c", "run-high"]));
+  L.push("Share that would have happened anyway, %: " + (txt("cf") || "blank (intervention default)"));
+  if (m.own) L.push("Own intervention, outcome per unit: " + raw(["own-low", "own-c", "own-high"]), "Own intervention, DALYs per outcome: " + (txt("own-d") || "blank"), "Own intervention, route to health: " + (routeName($("own-route").value) || "not named"), "Own intervention, unit and outcome: " + (txt("own-words") || "blank"), "Own intervention, source: " + (txt("own-src") || "blank"));
+  L.push("Emissions inputs: direct " + (txt("e-direct") || "blank") + "; diesel " + (txt("e-diesel") || "blank") + " " + $("e-unit").value + "; grid kWh " + (txt("e-grid") || "blank") + "; grid factor " + (txt("e-gf") || "blank"));
+  L.push("", "RESULT. " + m.label, OPEN186, "Cost per DALY averted: " + (m.def.some(Boolean) ? three(m.cpd, moneyFull) : "not computed" + (m.why ? " (" + m.why + ")" : "")), "DALYs averted a year: " + three(m.dalys, sig), "Annual cost: " + three(m.cost, moneyFull), "Net change in emissions a year, metric tons CO2e: " + (m.emis ? three(m.emis, sig) : "not given"));
+  const t3 = (a, f) => a.map((v, i) => ["best ", "central ", "worst "][i] + (isNum(v) ? f(v) : has(v) ? v : "blank")).join("; ");
+  if (m.tf) L.push("PM2.5 cut a year, short tons: " + (m.tons ? t3(m.tons, sig) : "not computed"), "Cost for each short ton of PM2.5 cut: " + (m.tons ? t3(m.cpt, moneyFull) : "not computed"));
+  if (m.hf !== null) L.push("Health-care and productivity costs avoided a year, at 2025 prices (a working figure that CHLP has not assessed): " + (m.hc ? t3(m.hc, moneyFull) : "not computed"));
+  if (m.def[1]) { L.push("Against the bar of about " + moneyFull(BAR) + ": " + barReading(m)[2]);
+    if (m.usShow) L.push("Against the US yardstick of " + moneyFull(US) + (m.usShow === "own" ? ", if the program is in the United States" : "") + ": " + (usUnder(m) ? "at or under" : "above"));
+    L.push("Complete with a range: " + (m.complete ? "yes" : m.rangeBad ? "no: check the range" : "no")); }
+  if (p) L.push("How the cost was entered: " + m.costHow, "Factors used: " + (m.own ? "your own figures" : p.status));
+  if (p && p.hcNote) L.push("Health-care costs, evidence on record: " + p.hcNote);
+  const all = issues.est.concat(issues.trk);
+  L.push("Entries to check: " + (all.length ? all.length : "none")); all.slice(0, 20).forEach(x => L.push("  - " + x.text));
+  L.push("", "TRACKER. Modeled from the units you delivered, with your estimate's factors. CHLP has not checked it.");
+  if (t.closed) L.push(F.closed);
+  else if (!t.any) L.push("Nothing recorded yet.");
+  else {
+    const un = t.svc ? "units in service " : "units ";
+    t.q.filter(x => x.rec).forEach(x => L.push(x.name + ": " + un + sig(x.u) + (has(x.plan) ? " (plan " + sig(x.plan) + ")" : "") + "; one-time spending " + (txt("t-one-" + x.i) || "blank") + "; running spending " + (txt("t-run-" + x.i) || "blank") +
+      (x.d ? "; DALYs averted " + sig(x.d[1]) : "") + (has(x.cpd) ? "; cost per DALY " + cf(moneyFull)(x.cpd) : "") + (txt("t-em-" + x.i) ? "; emissions " + txt("t-em-" + x.i) : "") + (txt("t-h-" + x.i) ? "; measured health data " + txt("t-h-" + x.i) + (txt("t-src-" + x.i) ? " (" + txt("t-src-" + x.i) + ")" : "") : "")));
+    L.push("To date: " + t.tot.n + " quarters; " + (t.svc ? "units in service, average " : "units ") + sig(t.uAct) + " against " + sig(t.uPlan) + " planned" + (t.per ? "; DALYs averted " + sig(t.tot.d[1]) + " (low " + sig(t.tot.d[0]) + ", high " + sig(t.tot.d[2]) + ") against " + sig(t.tot.pd) + " planned" : "") +
+      (has(t.cpdTo) ? "; cost per DALY " + cf(moneyFull)(t.cpdTo) + (isNum(t.cpdTo) && t.est ? " against the estimate of " + moneyFull(t.est) + ", a multiple of " + x2(t.cpdTo / t.est) : "") : ""));
+    t.by.filter(b => b.n).forEach(b => L.push(b.name + ": " + b.n + " of 4 quarters; " + (t.svc ? "units in service, average " : "units ") + sig(b.u) + (has(b.pu) ? " against " + sig(b.pu) + " planned for the year" : "") + (has(b.cpd) ? "; cost per DALY " + cf(moneyFull)(b.cpd) : "")));
+  }
+  L.push("", "SHARING AND FOLLOW-UP. Consent is given in three separate parts.", "CHLP may keep this entry in its database: " + ($("fu-keep").value || "blank: an answer is needed"), "CHLP may check this entry against the implementer's records: " + ($("fu-check").value || "blank: an answer is needed"),
+    "Would report actual results a year from now: " + ($("fu-report").value || "blank: an answer is needed"), "Contact: " + (txt("fu-contact") || "blank"));
+  L.push("", "HOW THE RESULT IS USED", "Funders reported to, and the form each asks for: " + (txt("use-funders") || "blank"), "Whether the result has gone into a proposal or a report, and how the funder responded: " + (txt("use-prop") || "blank"));
+  L.push("", "FEEDBACK", "Minutes it took: " + (txt("fb-min") || "blank"), "Inputs not supplied: " + (txt("fb-miss") || "blank"), "What was unclear: " + (txt("fb-unclear") || "blank"), "Would change a decision: " + ($("fb-dec").value || "blank"), "Which decision, and when: " + (txt("fb-which") || "blank"), "School buses, miles a year and years built: " + (txt("fb-bus") || "blank"));
+  L.push("", "TO CARRY ON LATER: keep this whole entry, down to the line that starts CHLP-SAVE-END. Paste it into \"Restore a saved entry\" at the top of the page and everything above comes back.", saveBlock());
+  return L.join("\n");
+}
+
+const FIELDS = ["prog", "org", "where", "u-low", "u-c", "u-high", "years", "cf", "one-low", "one-c", "one-high", "run-low", "run-c", "run-high", "tot-low", "tot-c", "tot-high", "own-low", "own-c", "own-high", "own-d", "own-words", "own-src", "extra-basis", "e-direct", "e-diesel", "e-grid", "e-gf", "fu-contact", "use-funders", "use-prop", "fb-min", "fb-miss", "fb-unclear", "fb-which", "fb-bus"];
+function wipe() {   // empty every field, with no redraw
+  FIELDS.concat(TRACK_IDS).forEach(i => $(i).value = ""); ["fb-dec", "own-route"].forEach(i => $(i).value = ""); CONSENT_IDS.forEach(i => $(i).classList.remove("flag")); $("send-msg").textContent = ""; shownYears = 1;
+  $("intervention").value = ""; $("disc").value = "No"; $("e-unit").value = "gallons"; $("own-kind").value = "once"; $("mode-split").checked = true; $("extra").checked = false;
+  F.routes.forEach(r => $("q-" + r.id).checked = false); applied.clear(); exampleOn = false;
+}
+function clearAll() { wipe(); renderProps(); render(); }
+function loadExample() {
+  $("prog").value = "Hospital oxygen (example)"; $("org").value = "District health office (example)"; $("where").value = "Northern Uganda";
+  $("q-care").checked = true;
+  $("intervention").value = "Solar-powered oxygen, one hospital"; $("u-c").value = "54.4"; $("years").value = "10";
+  $("mode-total").checked = true; $("tot-low").value = "19814"; $("tot-c").value = "30232"; $("tot-high").value = "44809"; $("disc").value = "Yes";
+  // ten invented quarters, the same as the spreadsheet's tracker example: units, one-time spending, running spending
+  $("t-year").value = "2027"; shownYears = 3;
+  [[10, 24500, 150], [12, 0, 150], [14, 0, 150], [12, 0, 150], [13, 0, 160], [15, 0, 165], [15, 0, 160], [14, 0, 165], [12, 1800, 175], [14, 0, 175]].forEach((v, i) => { $("t-u-" + i).value = v[0]; $("t-one-" + i).value = v[1]; $("t-run-" + i).value = v[2]; });
+  $("t-h-3").value = "45"; $("t-src-3").value = "Children discharged alive in 2027, from the ward register (illustrative)";
+  exampleOn = true;
+}
+function showStatus() {   // the example note, and whether the entry has been copied since it last changed (repair 16)
+  $("ex-off").hidden = exampleOn; $("ex-load").hidden = exampleOn; $("ex-on").hidden = !exampleOn; $("clear").hidden = !exampleOn;
+  const empty = isEmpty(snapshot()), st = $("copied");
+  st.className = "small " + (dirty && !exampleOn && !empty ? "warnline" : "muted");
+  st.textContent = exampleOn ? "This is the example." : empty ? "" : dirty ? (copiedAt ? "Changed since you copied it at " + copiedAt + "." : "Not yet copied. Nothing is kept until you copy it.") : copiedAt ? "Copied at " + copiedAt + ". Nothing has changed since." : "";
+}
+
+// ---------- Pasting cells from a spreadsheet: they fill across and down, and are never joined (repair 5) ----------
+function pasteGrid(target, text) {
+  const rows = text.replace(/\r/g, "").replace(/\n+$/, "").split("\n").map(r => r.split("\t"));
+  if (rows.length === 1 && rows[0].length === 1) return false;                    // one cell: the browser pastes it as usual
+  const cellsIn = rows.reduce((s, r) => s + r.length, 0); let used = 0;
+  const q = target.id.match(/^t-([a-z]+)-(\d+)$/), tri = target.id.match(/^(u|one|run|tot|own)-(low|c|high)$/);
+  const put = (id, v) => { const e = $(id); if (!e) return; e.value = v.trim(); used++; };
+  if (q) {
+    const cols = ["u", "one", "run", "plan"].includes(q[1]) ? ["u", "one", "run", "plan"] : ["em", "h", "src"], c0 = cols.indexOf(q[1]), r0 = +q[2];
+    rows.forEach((r, i) => r.forEach((v, j) => { if (r0 + i < NQ && c0 + j < cols.length) put("t-" + cols[c0 + j] + "-" + (r0 + i), v); }));
+    shownYears = Math.min(NY, Math.max(shownYears, Math.ceil(Math.min(NQ, r0 + rows.length) / 4)));
+  } else if (tri) { const cols = ["low", "c", "high"], c0 = cols.indexOf(tri[2]); rows[0].forEach((v, j) => { if (c0 + j < 3) put(tri[1] + "-" + cols[c0 + j], v); }); }
+  else put(target.id, rows[0][0]);
+  const msg = $(q ? "t-msg" : "in-msg");
+  msg.textContent = used === cellsIn ? `Pasted ${used} cells, across and down.` : `Pasted ${used} of ${cellsIn} cells. The rest did not fit and were left out.`; msg.hidden = false;
+  return true;
+}
+
+function start() {
+  $("qs").innerHTML = F.routes.map(r => `<label class="check" for="q-${r.id}"><input type="checkbox" id="q-${r.id}"> <span><b>${esc(r.name)}.</b> ${esc(r.q)}</span></label>`).join("");
+  $("intervention").innerHTML = '<option value="">Choose an intervention</option>' +
+    F.sectors.map(s => { const rs = F.rows.filter(r => r.sector === s); return rs.length ? `<optgroup label="${esc(s)}">` + rs.map(r => `<option>${esc(r.name)}</option>`).join("") + "</optgroup>" : ""; }).join("") +
+    `<optgroup label="None of these fits"><option>${esc(OWN)}</option></optgroup>`;
+  $("own-route").innerHTML = '<option value="">Not named</option>' + F.routes.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join("");
+  $("ftable").innerHTML = "<thead><tr>" + ["Intervention", "Sector", "Pathways counted", "Unit", "How the unit is counted", "Outcome per unit: low, central, high", "DALYs per outcome", "Default share anyway", "PM2.5 cut per unit a year, short tons: low, central, high", "Status"].map(TH).join("") + "</tr></thead><tbody>" +
+    F.rows.filter(r => r.name !== OWN).map(r => `<tr><td>${esc(r.name)}</td><td class="txt">${esc(r.sector)}</td><td class="txt">${esc(r.counted.map(c => c.name).join("; "))}</td><td class="txt">${esc(r.unit)}</td><td class="txt">${esc(r.kind)}</td><td>${sig(r.low)}, ${sig(r.central)}, ${sig(r.high)}</td><td>${sig(r.dalys)}</td><td>${Math.round((r.cf || 0) * 100)}%</td><td>${r.tonsCentral != null ? sig(r.tonsLow) + ", " + sig(r.tonsCentral) + ", " + sig(r.tonsHigh) : "Not estimated"}</td><td class="txt">${esc(r.status)}</td></tr>`).join("") + "</tbody>";
+  $("consts").innerHTML = `<dt>The bar</dt><dd>About ${moneyFull(BAR)} per DALY averted: the bar CHLP uses, implied by Coefficient Giving's request for proposals.</dd><dt>Discounting</dt><dd>${esc(F.discounting)}</dd><dt>US yardstick</dt><dd>${moneyFull(US)} per quality-adjusted life year at 3%, at 2025 prices: the standard value of the US Department of Health and Human Services for regulatory analysis, 2026 (low $339,000, high $1,105,000). A rough comparison only: the two measures differ, and that value discounts the years. It is shown for entries set in the United States.</dd><dt>Diesel</dt><dd>${EFG} kg CO2 per gallon (US EPA emission factors, 2025).</dd><dt>US grid average</dt><dd>${EFGRID.toFixed(3)} kg CO2e per kWh (US EPA eGRID2023, revision 2).</dd><dt>Fine particles (PM2.5) from the tailpipe</dt><dd>School bus entries only, for the school bus assessment's base bus: ${F.pm["Miles a year, per bus"].toLocaleString("en-US")} miles a year at ${F.pm["Tailpipe PM2.5 of the bus retired or fitted, grams a mile"].toFixed(3)} grams a mile, which is ${sig(F.pm["Base bus: tailpipe PM2.5 a year, short tons"])} short tons a year. An exhaust filter removes 80% to 98% of it and a catalyst 20% to 50%. Cabin filters cut none. What a crankcase filter traps is not counted. An electric bus is credited the old bus's rate for the ${F.pm["Years the old bus has left"]} years it has left, then a new diesel bus's rate, as a yearly equivalent at 3%. Nitrogen oxides are not estimated. A one-time cost is spread at 3%, so the cost for each ton can differ from a figure that divides the whole cost by the tons cut over the equipment's life. For a grant application, use the US Environmental Protection Agency's Diesel Emissions Quantifier with your own engines.</dd><dt>Health-care and productivity costs</dt><dd>School bus electrification only, and a working figure that CHLP has not assessed. The figure is ${F.hc["New cases of childhood asthma avoided for each electric bus"]} new cases of childhood asthma avoided for each electric bus (Proceedings of the National Academy of Sciences 2024, the average US diesel school bus of 2017, over 13.5 years), times ${moneyFull(F.hc["Cost of one case of childhood asthma, $ at 2015 prices"])} for a case at 2015 prices (in the same paper, what the valuation approach of the US Environmental Protection Agency yields: lifetime health-care costs and lost productivity). Moved to 2025 prices with the consumer price index, the product is ${moneyFull(F.hc["Costs avoided for each electric bus, present value, $ at 2025 prices"])} for each bus. It is CHLP's arithmetic on two published figures.</dd><dt>Possible health effects</dt><dd>${F.statuses.map(s => esc(s[0]) + ": " + esc(s[1])).join(" ")}</dd>`;
+  const qi = (i, k, label, kind) => `<td><input id="t-${k}-${i}" ${kind === "text" ? 'inputmode="text"' : kind === "neg" ? 'data-num data-neg inputmode="text"' : 'data-num inputmode="decimal"'} autocomplete="off" aria-label="${label}, quarter ${i + 1}"></td>`;
+  $("t-in").innerHTML = `<thead><tr>${TH("Quarter")}<th scope="col" id="t-uhead">Units delivered</th>${TH("One-time spending, $")}${TH("Running spending, $")}${TH("Your own plan, in units (optional)")}</tr></thead><tbody>` +
+    Array.from({ length: NQ }, (_, i) => `<tr id="t-row-${i}"><td id="t-lab-${i}"></td>` + qi(i, "u", "Units") + qi(i, "one", "One-time spending", "neg") + qi(i, "run", "Running spending", "neg") + qi(i, "plan", "Your own plan") + "</tr>").join("") + "</tbody>";
+  $("t-in2").innerHTML = `<thead><tr>${TH("Quarter")}${TH("Net change in emissions, metric tons CO2e")}${TH("Measured health data (a count)")}${TH("What was measured, and its source")}</tr></thead><tbody>` +
+    Array.from({ length: NQ }, (_, i) => `<tr id="t-row2-${i}"><td id="t-lab2-${i}"></td>` + qi(i, "em", "Net change in emissions", "neg") + qi(i, "h", "Measured health data") + qi(i, "src", "What was measured and its source", "text") + "</tr>").join("") + "</tbody>";
+  const wrap = document.querySelector(".wrap");
+  const touched = () => { dirty = true; $("undo-bar").hidden = true; undoState = null; };
+  wrap.addEventListener("input", e => { if (e.target.id !== "restore-box") touched(); render(); });
+  wrap.addEventListener("focusout", e => { const t = e.target; if (t.matches && t.matches("input[data-num]")) { const f = withCommas(t.value, optOf(t)); if (f !== t.value) { t.value = f; render(); } } });
+  wrap.addEventListener("change", e => {
+    const t = e.target;
+    if (t.id && t.id.startsWith("q-")) renderProps();
+    if (t.dataset && t.dataset.ap !== undefined) { const i = Number(t.dataset.ap); t.checked ? applied.add(i) : applied.delete(i); }
+    if (t.id !== "restore-box") touched();
+    render();
+  });
+  wrap.addEventListener("paste", e => {
+    const t = e.target; if (!(t.matches && (t.matches("input[data-num]") || /^t-src-\d+$/.test(t.id || "")))) return;      // figures and the tracker's notes; other text fields paste as usual
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (!/[\t\n]/.test(text.replace(/[\r\n]+$/, ""))) return;
+    if (pasteGrid(t, text)) { e.preventDefault(); touched(); commaAll(); render(); }
+  });
+  $("props").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.use) { $("intervention").value = b.dataset.use; }
+    else if (b.dataset.own !== undefined) {
+      const x = F.proposals[Number(b.dataset.own)];
+      $("intervention").value = OWN; $("own-route").value = x.route;
+      if (!txt("own-words")) $("own-words").value = x.count + "; " + x.outcome;
+    }
+    touched(); render(); $("h-int").scrollIntoView({ block: "start" });
+  });
+  $("clear").addEventListener("click", () => { const before = snapshot(); clearAll(); dirty = false; copiedAt = ""; offerUndo(before, "The example was cleared."); showStatus(); });
+  $("ex-load").addEventListener("click", () => { const before = snapshot(); wipe(); loadExample(); commaAll(); renderProps(); render(); dirty = false; copiedAt = ""; offerUndo(before, "The example replaced what was on the page."); showStatus(); });
+  $("undo").addEventListener("click", () => { if (!undoState) return; const d = undoState; undoState = null; $("undo-bar").hidden = true; applyState(d); dirty = true; showStatus(); });
+  $("t-add").addEventListener("click", () => { shownYears = Math.min(NY, shownYears + 1); render(); });
+  $("restore-go").addEventListener("click", () => { const r = restoreEntry($("restore-box").value); $("restore-msg").textContent = r.msg; if (r.ok) $("restore-box").value = ""; });
+  let rz = null; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => drawCharts(lastTrack), 120); });
+  $("copy").addEventListener("click", () => {
+    const t = $("entry").value, stamp = () => { copiedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
+    const done = () => { dirty = false; stamp(); showStatus(); };
+    const fallback = () => { $("entry").focus(); $("entry").select(); $("copied").className = "small warnline"; $("copied").textContent = "Select the text below and copy it."; };
+    try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+  });
+  $("send-copy").addEventListener("click", () => {
+    const b = showConsent(true), msg = $("send-msg");
+    if (b.length) { msg.className = "small warnline"; msg.textContent = "Not copied. Answer the " + (b.length === 3 ? "three questions" : b.length === 1 ? "one question" : "two questions") + " on consent that " + (b.length === 1 ? "is" : "are") + " still blank, at the top of the page."; $("h-consent").scrollIntoView({ block: "start" }); return; }
+    const t = $("entry").value, ok = () => { msg.className = "small"; msg.textContent = "Copied. Send it to richmond@climatehealthledger.org."; dirty = false; copiedAt = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); showStatus(); };
+    const fallback = () => { $("entry").focus(); $("entry").select(); msg.className = "small warnline"; msg.textContent = "Select the text below, copy it, and send it to richmond@climatehealthledger.org."; };
+    try { navigator.clipboard.writeText(t).then(ok, fallback); } catch (e) { fallback(); }
+  });
+  CONSENT_IDS.forEach(i => $(i).addEventListener("change", () => { showConsent($(i).classList.contains("flag") || CONSENT_IDS.some(j => $(j).classList.contains("flag"))); $("send-msg").textContent = ""; }));
+  renderProps(); render(); showConsent(false);
+}
+start();
+</script>
+
+</body></html>
