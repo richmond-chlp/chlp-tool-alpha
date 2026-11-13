@@ -1,23 +1,29 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
 <title>CHLP Tool Alpha</title>
-
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
 /* Layout: one working column, like a ledger page: the program, the health effects to look for, the entries, the result directly under them, then the tracker with its charts, and the factors behind it all at the foot. */
 :root{
   --bg:#f3f5f9; --surface:#ffffff; --ink:#172033; --muted:#566176; --line:#d3dae6;
-  --accent:#1f3864; --band:#1f3864; --band-ink:#ffffff; --head:#fff2cc; --head-line:#b8860b;
-  --ok:#17654a; --ok-bg:#e2f3eb; --warn:#7d5200; --warn-bg:#fcefd0; --bad:#8c2f2f; --bad-bg:#f9e3e1; --field:#ffffff; --focus:#2f6fde; --actual:#2a78d6; --plan:#eb6834;
+  --accent:#1a1f63; --band:#1a1f63; --band-ink:#ffffff; --head:#fdf1df; --head-line:#c58204;
+  --ok:#17654a; --ok-bg:#e2f3eb; --warn:#7d5200; --warn-bg:#fcefd0; --bad:#8c2f2f; --bad-bg:#f9e3e1; --field:#ffffff; --focus:#2f6fde; --actual:#3944a9; --plan:#c58204;
   --display:"Space Grotesk","Segoe UI",system-ui,sans-serif; --text:"Inter","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0f1522; --surface:#171f30; --ink:#e6ebf5; --muted:#9ba7bc; --line:#2d3950;
-  --accent:#9db9f0; --band:#263a63; --band-ink:#f2f5fb; --head:#3a3216; --head-line:#d9b44a;
-  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#3987e5; --plan:#d95926; color-scheme:dark } }
+  --accent:#a4b4f2; --band:#2d3771; --band-ink:#f2f5fb; --head:#352611; --head-line:#f0a73a;
+  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#7184e0; --plan:#c58204; color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#0f1522; --surface:#171f30; --ink:#e6ebf5; --muted:#9ba7bc; --line:#2d3950;
-  --accent:#9db9f0; --band:#263a63; --band-ink:#f2f5fb; --head:#3a3216; --head-line:#d9b44a;
-  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#3987e5; --plan:#d95926; color-scheme:dark }
+  --accent:#a4b4f2; --band:#2d3771; --band-ink:#f2f5fb; --head:#352611; --head-line:#f0a73a;
+  --ok:#7fd3ae; --ok-bg:#173a2d; --warn:#f0c36b; --warn-bg:#3d3015; --bad:#f0a39b; --bad-bg:#44201d; --field:#111827; --focus:#7aa7ff; --actual:#7184e0; --plan:#c58204; color-scheme:dark }
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--text);font-size:15px;line-height:1.5}
 .wrap{max-width:920px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
@@ -125,7 +131,7 @@ footer{font-size:.82rem;color:var(--muted)}
     <div class="grid">
       <div class="field"><label for="fu-keep">May CHLP keep this entry in its database?</label><select id="fu-keep"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">Entries shared with CHLP are open to anyone. Until its database is online, CHLP sends them on request. CHLP keeps the entry as it was received, with its date. If you answer No, CHLP reads your feedback and keeps no copy of your entry.</span></div>
       <div class="field"><label for="fu-check">May CHLP check this entry against your records?</label><select id="fu-check"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">A check compares four things with your records. They are the units delivered, the spending, the basis for the share that would have happened anyway, and the fit of the intervention and setting to the factors. Your consent covers the result whatever it shows. You see the result 30 days before it is recorded.</span></div>
-      <div class="field"><label for="fu-report">Would you report actual results a year from now?</label><select id="fu-report"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">CHLP would ask for your tracker figures, to set your estimate beside what happened.</span></div>
+      <div class="field"><label for="fu-report">Would you report these actual results a year from now?</label><select id="fu-report"><option value=""></option><option>Yes</option><option>No</option><option>Yes if anonymized</option></select><span class="hint">CHLP would ask for your tracker figures, to set your estimate beside what happened.</span></div>
     </div>
   </section>
 
@@ -350,7 +356,7 @@ footer{font-size:.82rem;color:var(--muted)}
   </section>
 
     </div>
-  <footer>Alpha 0.10, November 11, 2026, built from the CHLP spreadsheet, version 0.14. A test version: figures and wording may change.</footer>
+  <footer>Alpha 0.13, November 12, 2026, built from the CHLP spreadsheet, version 0.15. A test version: figures and wording may change.</footer>
 </div>
 
 <script>
@@ -827,7 +833,7 @@ function offerUndo(before, msg) {
 function entryText(m, t, issues) {
   const L = [], p = m.p, cf = f => v => v === SAVES ? SAVES : f(v), three = (a, f) => a ? `best ${has(a[0]) ? cf(f)(a[0]) : "blank"}; central ${has(a[1]) ? cf(f)(a[1]) : "blank"}; worst ${has(a[2]) ? cf(f)(a[2]) : "blank"}` : "not computed";
   const raw = ids => ids.map(i => txt(i) || "blank").join(" / ");
-  L.push("CHLP tool alpha entry (alpha 0.10, from spreadsheet version 0.14)");
+  L.push("CHLP tool alpha entry (alpha 0.13, from spreadsheet version 0.15)");
   if (exampleOn) L.push("EXAMPLE: these figures are not a real program's. Clear the example before entering your own.");
   L.push(CONSENT_IDS.every(i => $(i).value) ? "Consent: all three questions are answered." : "NOT READY TO SEND: " + blankConsent().length + " of the three questions on consent still blank. CHLP does not accept a blank answer.");
   L.push("Program: " + (txt("prog") || "blank"), "Organization: " + (txt("org") || "blank"), "Where it runs: " + (txt("where") || "blank"), "Intervention: " + (p ? p.name : "none chosen"));
@@ -982,4 +988,5 @@ function start() {
 start();
 </script>
 
-</body></html>
+</body>
+</html>
