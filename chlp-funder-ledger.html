@@ -710,7 +710,7 @@ html.pfover .wrap,html.pfover #pf-sum{top:calc(var(--pf-in-y) + var(--pfbar-h,64
   <section aria-labelledby="h-map" class="map" id="sec-map">
     <h2 id="h-map">The full logic: how the result is reached</h2>
     <p class="hint">A sheet of the whole calculation, for checking. Select a cell to see its formula and the cells it reads. Each row names its source and the place in it. Nothing here changes your entry.</p>
-    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Where the study is attached, select that cell to open it at the marked passage; it stays open until you close it. <i class="nk"></i>A purple corner marks a figure with a note only. Load the example at the top of the page to see two studies.</p>
+    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Where the study is attached, select that cell to open it at the marked passage; it stays open until you close it. <i class="nk"></i>A purple corner marks a figure with a note only. Load the example at the top of the page to see both.</p>
     <div id="led-slot-r"></div>
     <div id="map"></div>
     <div class="noteed" id="note-ed" hidden>
@@ -1890,6 +1890,7 @@ function loadExample() {
   const sf = samplePdf(), iv = $("intervention").value, mark = pg => [[pg, 0.11, 0.172, 0.74, 0.03]]; files[SAMPLE] = { file: sf, size: sf.size, doc: null };
   cellNotes[iv + " | Outcome for each unit"] = { text: "Example of a note. A reviewer writes here which table of the study gives this figure. The file attached is an invented sample. It is a stand-in for the trial's own paper.", file: SAMPLE, page: "2", pass: "Table 2 (invented)", m: mark(2) };
   cellNotes[iv + " | Total cost over the years"] = { text: "Example of a note. The cost comes from the budget table of the sample file.", file: SAMPLE, page: "3", pass: "Table 5 (invented)", m: mark(3) };
+  cellNotes[iv + " | Years the spending covers"] = { text: "Example of a note with no study. A reviewer writes here why ten years is used, for instance the working life of the equipment as the implementer reported it.", file: "", page: "", pass: "" };
 }
 function showStatus() {   // the example note, and whether the entry has been copied since it last changed (repair 16)
   $("ex-off").hidden = exampleOn; $("ex-load").hidden = exampleOn; $("ex-on").hidden = !exampleOn; $("clear").hidden = !exampleOn;
@@ -1951,7 +1952,7 @@ function funderEntry() {
   return "COPY FOR A FUNDER. Left out: the contact for CHLP, the two answers on consent that concern CHLP alone, the answers on how the result is used, and the feedback on the tool.\n\n" + text + "\n" + ["CHLP-SAVE-BEGIN"].concat(lines, "CHLP-SAVE-END " + fnv(body)).join("\n");
 }
 function shedExample() {   // repair 6: the example's notes and study do not travel into a real entry
-  let n = 0; Object.keys(cellNotes).forEach(k => { if (cellNotes[k].file === SAMPLE) { delete cellNotes[k]; n++; } }); dropSample(); return n;
+  let n = 0; Object.keys(cellNotes).forEach(k => { const c = cellNotes[k]; if (c.file === SAMPLE || (!c.file && /^Example of a note/.test(c.text || ""))) { delete cellNotes[k]; n++; } }); dropSample(); return n;
 }
 function start() {
   $("qs").innerHTML = F.routes.map(r => `<label class="check" for="q-${r.id}"><input type="checkbox" id="q-${r.id}"> <span><b>${esc(r.name)}.</b> ${esc(r.q)}</span></label>`).join("");
