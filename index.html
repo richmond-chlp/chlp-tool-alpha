@@ -149,6 +149,27 @@ footer{font-size:.82rem;color:var(--muted)}
 .sheet td.pre{outline:2px dashed var(--head-line);outline-offset:-2px}
 .sheet td.c:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .sheet tr.blk td{background:var(--head);text-align:left;padding:2px 4px}
+/* Frozen top row and left column (pass 19) */
+.sheetbox{overflow:auto;max-height:min(78vh,820px);overscroll-behavior:contain;border:1px solid var(--line);border-radius:4px}
+.sheetbox:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sheet{border-collapse:separate;border-spacing:0}
+.sheet th,.sheet td{border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sheet thead th{position:sticky;top:0;z-index:3;height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
+.sheet tr.hd td,.sheet tr.hd th{position:sticky;top:28px;z-index:3;box-shadow:0 2px 0 var(--head-line)}
+.sheet th:first-child{position:sticky;left:0;z-index:2;width:2.6rem;min-width:2.6rem;max-width:2.6rem;box-sizing:border-box;background:var(--bg)}
+.sheet tbody td:nth-child(2){position:sticky;left:2.6rem;z-index:2;background:var(--surface);box-shadow:2px 0 0 var(--head-line)}
+.sheet tr.hd td:nth-child(2){background:var(--bg)}
+.sheet thead th:first-child,.sheet thead th:nth-child(2){position:sticky;z-index:5}
+.sheet thead th:nth-child(2){left:2.6rem;box-shadow:2px 0 0 var(--head-line)}
+.sheet tr.hd th:first-child,.sheet tr.hd td:nth-child(2){z-index:4}
+.sheet tr.blk td:nth-child(2){position:static;box-shadow:none;background:var(--head)}
+.sheet tr.blk .tw{position:sticky;left:2.6rem}
+.sheet tr.chk td:nth-child(2){background:var(--surface)}
+.sheet tr.hd td{white-space:nowrap}
+@media (max-width:760px){
+  .sheetbox{max-height:calc(50dvh - 110px);min-height:200px}
+  .sheet tbody td:nth-child(2),.sheet tr.hd td:nth-child(2){min-width:13ch;max-width:16ch;white-space:normal}
+}
 .sheet tr.chk td{font-weight:600}
 .sheet .tw{background:transparent;border:0;color:var(--ink);padding:3px 4px;font-weight:700;text-align:left}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .map{--typed:#93B4FF;--fixed:#7FD3A0} }
@@ -1234,7 +1255,7 @@ function renderMap(m) {
 <div class="tools"><button type="button" class="quiet sm" id="map-f" aria-pressed="${showF}">${showF ? "Show values" : "Show formulas"}</button>
 <button type="button" class="quiet sm" id="map-copy">Copy the sheet as cells</button> <span class="small" id="map-msg" role="status"></span>
 <span class="hint key"><span class="k in">Blue</span> you typed <span class="k fm">Black</span> a formula <span class="k fx">Green</span> a fixed factor</span></div>
-<div class="scroll"><table class="sheet" id="sheet" aria-label="The calculation as a sheet: column A names each quantity, B to D hold the three cases, E to G say how each is reached and from what source"><thead><tr><th scope="col" aria-label="Row number"></th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th><th scope="col">D</th><th scope="col">E</th><th scope="col">F</th><th scope="col">G</th></tr></thead><tbody>
+<div class="scroll sheetbox" id="sheetbox" tabindex="0" aria-label="The sheet; it scrolls inside this box, and the top row and left column stay in place"><table class="sheet" id="sheet" aria-label="The calculation as a sheet: column A names each quantity, B to D hold the three cases, E to G say how each is reached and from what source"><thead><tr><th scope="col" aria-label="Row number"></th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th><th scope="col">D</th><th scope="col">E</th><th scope="col">F</th><th scope="col">G</th></tr></thead><tbody>
 <tr class="hd"><th scope="row">1</th><td class="txt">Quantity</td><td>Best case</td><td>Central case</td><td>Worst case</td><td class="txt">How it is reached</td><td class="txt">Status</td><td class="txt">Source, and where in it</td></tr>${body}</tbody></table></div>` +
     dk("src", "Sources for this intervention, and what is recorded of each", locHtml(m)) + (!m.own && p.note ? dk("note", "What the figures assume", `<p class="small">${esc(p.note)}</p>`) : "");
   if (html !== lastMap) { box.innerHTML = html; lastMap = html; }
