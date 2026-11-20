@@ -14,6 +14,10 @@ Each result is read on three ledgers, each in its own unit: health in DALYs, cli
 
 Health and climate can also be read together, through a rate that converts tons of CO2e to DALYs. The page opens at CHLP's default of about 3,060 metric tons for each DALY, and the reader can change it. The evidence supports about 500 to about 8,200, so this reading never replaces the two ledgers or the headline result. Animal welfare enters no combined figure.
 
+## The funder's ledger
+
+Open it at https://richmond-chlp.github.io/chlp-tool-alpha/chlp-funder-ledger.html. `chlp-funder-ledger.html` is a first form of a page for funders. It reads several shared entries side by side and compares peers in one portfolio. It stores nothing; entries reach it as copied text or as files the implementer sends. Placeholder entries show how it reads; every name, figure and check on them is invented, and no real entry has been checked.
+
 ## What happens to what you enter
 
 - The page runs in your browser. It stores nothing, sends nothing and loads nothing from another address.
