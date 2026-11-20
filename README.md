@@ -6,16 +6,28 @@ An open tool from the Climate Health Ledger Project. An organization enters what
 
 Open the published page at https://richmond-chlp.github.io/chlp-tool-alpha/, or download `index.html` and open it in a browser. An entry takes about 30 minutes.
 
+The same estimate reads at three depths. The implementer's view gives the result. The program officer's view adds the detailed metrics. The researcher's view shows the whole calculation as a sheet, with each figure's source and the passage behind it.
+
+## The three ledgers
+
+Each result is read on three ledgers, each in its own unit: health in DALYs, climate in metric tons of CO2e, and animal welfare. Health and climate are the work today. The animal welfare ledger is shown and marked "Not yet assessed", with no figure.
+
+Health and climate can also be read together, through a rate that converts tons of CO2e to DALYs. The page opens at CHLP's default of about 3,060 metric tons for each DALY, and the reader can change it. The evidence supports about 500 to about 8,200, so this reading never replaces the two ledgers or the headline result. Animal welfare enters no combined figure.
+
 ## What happens to what you enter
 
-- The page runs in your browser. It stores nothing and sends nothing. Its one outside request loads two fonts from Google Fonts, and it carries no entry data.
+- The page runs in your browser. It stores nothing, sends nothing and loads nothing from another address.
 - Sharing is optional. To share an entry, copy it from the foot of the page and send it to richmond@climatehealthledger.org, with your answers to the three questions on consent.
 - Every result carries a label: "Your own modeled estimate. CHLP has not checked it."
 - CHLP checks shared entries against the implementer's records, only where the implementer agrees.
 
+## Browsers
+
+Each page is about 1 MB and carries its own PDF reader for the studies behind the figures. The reader needs a recent browser: Safari 16.4 or later, Firefox 113 or later, or a current Chrome or Edge. In an older browser the rest of the page works and the study reader says it cannot open.
+
 ## Status
 
-Alpha 0.16, November 17, 2026, built from the CHLP spreadsheet, version 0.18. A test version: figures and wording may change. A first test with program teams starts when the first team confirms.
+Alpha 0.17, November 19, 2026, built from the CHLP spreadsheet, version 0.20. A test version: figures and wording may change. A first test with program teams starts when the first team confirms.
 
 ## License
 
