@@ -399,6 +399,11 @@ html.pfover #pf-entrybar{position:fixed;top:0;left:0;right:0;z-index:58;margin:0
 html.pfover .wrap{position:fixed;top:var(--pfbar-h,64px);left:0;right:0;bottom:0;z-index:59;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg);margin:0;max-width:none;box-sizing:border-box;padding-left:max(16px,env(safe-area-inset-left,0px),calc((100vw - 1680px) / 2));padding-right:max(16px,env(safe-area-inset-right,0px),calc((100vw - 1680px) / 2))}
 html.pfover .wrap .who #who-lab,html.pfover .wrap .who .who-btns{display:none}
 @media (max-width:760px){ html.pfover .panels:not([data-who="i"]){height:calc(100dvh - var(--pfbar-h,64px) - 12px)} html.pfover #pf-entrybar{position:fixed} html.pfover #pf-entrybar .pfbtns{width:100%} html.pfover #pf-entrybar #pf-entry-name{font-size:.85rem;line-height:1.3} }
+
+/* The entry's summary in the sheet (pass 22) */
+html.pfover #pf-sum{position:fixed;top:var(--pfbar-h,64px);left:0;right:0;bottom:0;z-index:59;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg);box-sizing:border-box;padding:18px max(16px,env(safe-area-inset-left,0px),calc((100vw - 1000px) / 2)) 40px}
+#pf-sum .pfdetail{position:static;max-width:none}
+#pf-entrybar button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
 </style>
 
 <div class="pfwrap" id="pf">
@@ -483,7 +488,8 @@ html.pfover .wrap .who #who-lab,html.pfover .wrap .who .who-btns{display:none}
   </section>
 
   <div class="note plain" id="pf-entrybar" role="region" aria-label="The opened entry" hidden><span id="pf-entry-name"></span>
-    <span class="pfbtns"><button type="button" class="quiet sm" id="pf-entry-o">Program officer's view</button><button type="button" class="quiet sm" id="pf-entry-r">Researcher's view</button><button type="button" class="sm" id="pf-entry-close" aria-keyshortcuts="Escape">Close and return to the row</button></span></div>
+    <span class="pfbtns"><button type="button" class="quiet sm" id="pf-entry-s">Summary</button><button type="button" class="quiet sm" id="pf-entry-o">Program officer's view</button><button type="button" class="quiet sm" id="pf-entry-r">Researcher's view</button><button type="button" class="sm" id="pf-entry-close" aria-keyshortcuts="Escape">Close and return to the row</button></span></div>
+  <div class="pfsum" id="pf-sum" role="region" aria-label="The entry's summary" hidden></div>
 </div>
 <div class="wrap">
   <div class="top">
@@ -2110,14 +2116,25 @@ function pfCalc(d) {
 // The page's own form, emptied and hidden again once the entries are read.
 function pfRest() {
   pfUnlock(); wipe(); CONSENT_IDS.forEach(k => { $(k).value = ""; }); setWho("i"); setView(false); renderProps(); render(); dirty = false;
-  PF.entry = ""; document.querySelector(".wrap").hidden = true; $("pf-entrybar").hidden = true; pfOverlay(false);
+  PF.entry = ""; PF.open = ""; document.querySelector(".wrap").hidden = true; $("pf-entrybar").hidden = true; $("pf-sum").hidden = true; if (!pfSumSet.busy) { pfSumSet.busy = true; try { $("pf-sum").innerHTML = ""; pfSumSet.last = ""; } finally { pfSumSet.busy = false; } } pfOverlay(false);
+}
+// Selecting an entry opens the sheet on its summary (pass 22).
+const pfSumSet = { last: "", busy: false };
+function pfEntryName(r) { return (PUB ? "Entry " + (r.no || "") + (r.anon ? ", anonymized" : ": " + nameOf(r)) : nameOf(r) + (r.r.org && r.r.prog ? ", " + r.r.org : "")) + ", opened in place. It is read here and cannot be changed. " + (PUB && r.chk !== LEVELS[0] ? "" : LABEL); }
+function pfShowSum(k) {
+  const r = byKey(k); if (!r) return;
+  if (!document.querySelector(".wrap").hidden) pfRest();
+  PF.open = k; PF.entry = k; pfRender();
+  $("pf-entrybar").hidden = false; $("pf-sum").hidden = false; $("pf-entry-name").textContent = pfEntryName(r);
+  $("pf-entry-s").setAttribute("aria-pressed", "true"); $("pf-entry-o").setAttribute("aria-pressed", "false"); $("pf-entry-r").setAttribute("aria-pressed", "false");
+  pfOverlay(true); $("pf-sum").scrollTop = 0; $("pf-entry-close").focus();
 }
 // The opened entry as a full-screen sheet over the ledger (pass 21).
 function pfOverlay(on) {
   const root = document.documentElement, bar = $("pf-entrybar");
   root.classList.toggle("pfover", on);
-  [...$("pf").children].forEach(c => { if (c !== bar) { if (on) c.setAttribute("inert", ""); else c.removeAttribute("inert"); } });
-  if (on) { root.style.setProperty("--pfbar-h", bar.offsetHeight + "px"); document.querySelector(".wrap").scrollTop = 0; }
+  [...$("pf").children].forEach(c => { if (c !== bar && c.id !== "pf-sum") { if (on) c.setAttribute("inert", ""); else c.removeAttribute("inert"); } });
+  if (on) { root.style.setProperty("--pfbar-h", bar.offsetHeight + "px"); document.querySelector(".wrap").scrollTop = 0; $("pf-sum").scrollTop = 0; }
   else root.style.removeProperty("--pfbar-h");
 }
 window.addEventListener("resize", () => { if (document.documentElement.classList.contains("pfover")) document.documentElement.style.setProperty("--pfbar-h", $("pf-entrybar").offsetHeight + "px"); });
@@ -2265,23 +2282,24 @@ function pfRender() {
   PF.sel = PF.sel.filter(k => byKey(k));
   const anyPh = PF.rows.some(r => r.ph); $("pf-ph-note").hidden = !anyPh; $("pf-ph-load").hidden = PF.rows.length > 0; $("pf-ph-clear").hidden = !anyPh;
   const rows = pfShown(), open = k => PF.open === k;
-  const nameBtn = (r, text, sub) => `<button type="button" class="linkb" data-open="${r.key}" aria-expanded="${open(r.key)}" id="pf-b-${r.key}">${esc(text)}</button>${sub ? `<div class="small muted">${esc(sub)}</div>` : ""}${r.ph ? `<div><span class="chip plain">Placeholder, invented</span></div>` : ""}<div class="pflab">${esc(r.chk !== LEVELS[0] ? chkLabel(r) : PUB ? LABEL : r.r.label)}</div>`;
+  const nameBtn = (r, text, sub) => `<button type="button" class="linkb" data-open="${r.key}" aria-haspopup="dialog" id="pf-b-${r.key}">${esc(text)}</button>${sub ? `<div class="small muted">${esc(sub)}</div>` : ""}${r.ph ? `<div><span class="chip plain">Placeholder, invented</span></div>` : ""}<div class="pflab">${esc(r.chk !== LEVELS[0] ? chkLabel(r) : PUB ? LABEL : r.r.label)}</div>`;
   let head, body, cols;
   if (PUB) {
     cols = 11;
     head = TH2("Received") + TH2("Entry") + TH2("Intervention") + TH2("Setting") + TH2("Implementer") + TH2("Cost per DALY, central (range)") + TH2("Factors") + TH2("Checked") + TH2("A year later") + TH2("Issues") + TH2("Corrections");
-    body = rows.map(r => `<tr${open(r.key) ? ' class="pfopen"' : ""}><td>${usDate(stamp(r)) || "Not recorded"}</td><td>${nameBtn(r, r.no + ", v" + r.revs.length, "")}</td><td>${esc(pubIv(r))}</td><td>${esc(pubPlace(r))}</td><td>${esc(pubWho(r))}</td><td>${esc(cpdText(r))}</td><td>${esc(r.r.status)}</td><td>${esc(r.chk)}</td><td>${esc(yearLater(r))}</td><td>${r.revs.map((v, i) => "v" + (i + 1)).join(", ")}</td><td>${r.corr.trim() ? r.corr.trim().split(/\n+/).length + " logged" : "None"}</td></tr>` + (open(r.key) ? pfDetail(r, cols) : "")).join("");
+    body = rows.map(r => `<tr${open(r.key) ? ' class="pfopen"' : ""}><td>${usDate(stamp(r)) || "Not recorded"}</td><td>${nameBtn(r, r.no + ", v" + r.revs.length, "")}</td><td>${esc(pubIv(r))}</td><td>${esc(pubPlace(r))}</td><td>${esc(pubWho(r))}</td><td>${esc(cpdText(r))}</td><td>${esc(r.r.status)}</td><td>${esc(r.chk)}</td><td>${esc(yearLater(r))}</td><td>${r.revs.map((v, i) => "v" + (i + 1)).join(", ")}</td><td>${r.corr.trim() ? r.corr.trim().split(/\n+/).length + " logged" : "None"}</td></tr>` + "").join("");
   } else {
     cols = 14;
     head = TH2("Compare") + TH2("Program and organization") + TH2("Place") + TH2("Intervention and sector") + TH2("Units a year", 1) + TH2("Annual cost", 1) + TH2("DALYs averted a year", 1) + TH2("Cost per DALY, central (best to worst)") + TH2("Cost per DALY, health and climate together, central") + TH2("Reading") + TH2("Factors") + TH2("Setting") + TH2("Checked") + TH2("A year later");
     body = rows.map(r => { const x = r.r;
       return `<tr${open(r.key) ? ' class="pfopen"' : ""}><td><input type="checkbox" data-sel="${r.key}" aria-label="Compare ${esc(nameOf(r))}"${PF.sel.includes(r.key) ? " checked" : ""}></td><td>${nameBtn(r, nameOf(r), x.prog ? x.org : "")}</td><td>${esc(x.where)}</td><td>${esc(x.iv)}${x.sector ? `<div class="small muted">${esc(x.sector)}</div>` : ""}</td>
-        <td class="n">${x.units ? sig(x.units[1]) : ""}</td><td class="n">${x.cost ? money(x.cost[1]) : ""}</td><td class="n">${x.dalys ? sig(x.dalys[1]) : ""}</td><td>${esc(cpdText(r))}</td><td>${esc(pfBoth(r).t)}</td><td>${esc([x.bar, x.us].filter(Boolean).join(". "))}</td><td>${esc(x.status)}</td><td>${esc(x.setting)}</td><td>${esc(r.chk)}</td><td>${esc(yearLater(r))}</td></tr>` + (open(r.key) ? pfDetail(r, cols) : ""); }).join("");
+        <td class="n">${x.units ? sig(x.units[1]) : ""}</td><td class="n">${x.cost ? money(x.cost[1]) : ""}</td><td class="n">${x.dalys ? sig(x.dalys[1]) : ""}</td><td>${esc(cpdText(r))}</td><td>${esc(pfBoth(r).t)}</td><td>${esc([x.bar, x.us].filter(Boolean).join(". "))}</td><td>${esc(x.status)}</td><td>${esc(x.setting)}</td><td>${esc(r.chk)}</td><td>${esc(yearLater(r))}</td></tr>` + ""; }).join("");
     const same = rows.length > 0 && rows.every(r => r.r.iv === rows[0].r.iv), sum = f => rows.reduce((a, r) => a + (f(r) || 0), 0);
     const tc = sum(r => r.r.cost && r.r.cost[1]), td = sum(r => r.r.dalys && r.r.dalys[1]);
     if (rows.length) body += `<tr class="pftot" id="pf-tot"><td></td><td>Totals, ${rows.length} ${rows.length === 1 ? "entry" : "entries"}</td><td></td><td></td><td class="n">${same ? sig(sum(r => r.r.units && r.r.units[1])) : "Unlike units: not added"}</td><td class="n">${money(tc)}</td><td class="n">${sig(td)}</td><td>${same && td > 0 && tc > 0 ? money(tc / td) + " across these entries" : "Not averaged across unlike interventions"}</td><td colspan="6"></td></tr>`;
     $("pf-total-note").textContent = rows.length ? "Totals cover the entries shown. A cost per DALY is not averaged across unlike interventions." : "";
   }
+  { const so = PF.open && byKey(PF.open), sh = so ? pfDetail(so, 1).replace(/^<tr class="pfopen"><td colspan="1">/, "").replace(/<\/td><\/tr>$/, "") : ""; if (sh !== pfSumSet.last && !pfSumSet.busy) { pfSumSet.busy = true; try { $("pf-sum").innerHTML = sh; pfSumSet.last = sh; } finally { pfSumSet.busy = false; } } }
   $("pf-table").innerHTML = `<thead><tr>${head}</tr></thead><tbody>${body || `<tr><td colspan="${cols}">${PUB ? "No shared entry is on the page yet." : "No entry is on the page yet. Add the entries your grantees sent you."}</td></tr>`}</tbody>`;
   const heads = [...$("pf-table").querySelectorAll("thead th")].map(th => th.textContent);       // on a phone each row reads as a card, so each cell carries its heading
   let ri = 0;
@@ -2368,12 +2386,12 @@ function pfOpenEntry(k, w) {
   const r = byKey(k); if (!r) return;
   pfUnlock(); PF.entry = ""; { const T = pfRate(); $("br-c").value = $("pf-rate").value; $("br-low").value = ""; $("br-high").value = ""; $("br-src").value = T === BR.def ? BR.src : T === null ? "" : "The rate set on the ledger"; }   // the opened entry reads at the ledger's rate
   applyState(PUB && (r.anon || PF.reader) ? anonState(r.d) : r.d); PF.entry = k; setWho(w); render(); dirty = false;
-  document.querySelector(".wrap").hidden = false; $("pf-entrybar").hidden = false;
-  $("pf-entry-name").textContent = (PUB ? "Entry " + (r.no || "") + (r.anon ? ", anonymized" : ": " + nameOf(r)) : nameOf(r) + (r.r.org && r.r.prog ? ", " + r.r.org : "")) + ", opened in place. It is read here and cannot be changed. " + (PUB && r.chk !== LEVELS[0] ? "" : LABEL);
+  document.querySelector(".wrap").hidden = false; $("pf-entrybar").hidden = false; $("pf-sum").hidden = true; PF.open = k;
+  $("pf-entry-name").textContent = pfEntryName(r); $("pf-entry-s").setAttribute("aria-pressed", "false");
   $("pf-entry-o").setAttribute("aria-pressed", String(w === "o")); $("pf-entry-r").setAttribute("aria-pressed", String(w === "r"));
   pfOverlay(true); $("pf-entry-close").focus();
 }
-function pfCloseEntry() { const k = PF.entry; pfRest(); const b = $("pf-b-" + k); if (b) { b.scrollIntoView({ block: "center" }); b.focus(); } }
+function pfCloseEntry() { const k = PF.entry; pfRest(); pfRender(); const b = $("pf-b-" + k); if (b) { b.scrollIntoView({ block: "center" }); b.focus(); } }
 
 // ---------- Placeholder entries, on request: invented figures in bracketed names, so the page can be seen in use. They are never saved.
 function pfPlaceholders() {
@@ -2424,10 +2442,10 @@ function pfStart() {
       if (f === "named") r.named = t.checked; else if (f === "chk") r.chk = LEVELS.includes(t.value) ? t.value : LEVELS[0]; else if (f === "recv" || f === "chkd") r[f] = isIso(t.value) ? t.value : ""; else r[f] = t.value.slice(0, f === "corr" ? 2000 : f === "id" ? 40 : 30);
       pfRender(); const again = $(t.id); if (again) again.focus(); } });
   pf.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.open) { PF.open = PF.open === b.dataset.open ? "" : b.dataset.open; pfRender(); const again = $(b.id); if (again) again.focus(); }
+    if (b.dataset.open) pfShowSum(b.dataset.open);
     else if (b.dataset.view) pfOpenEntry(b.dataset.k, b.dataset.view);
     else if (b.dataset.rm) { PF.rows = PF.rows.filter(r => r.key !== b.dataset.rm); if (PF.entry === b.dataset.rm) pfRest(); PF.open = ""; pfRender(); }
-    else if (b.dataset.pos) { const r = pfPosition(byKey(b.dataset.pos)); if (r.ok) pfOut(r.text, "The position, for you to send to that grantee yourself."); else { $("pf-out-sec").hidden = false; $("pf-out").value = ""; $("pf-out-msg").textContent = r.msg; $("pf-out-sec").scrollIntoView({ block: "center" }); } } });
+    else if (b.dataset.pos) { const pk = b.dataset.pos; if (PF.entry) pfCloseEntry(); const r = pfPosition(byKey(pk)); if (r.ok) pfOut(r.text, "The position, for you to send to that grantee yourself."); else { $("pf-out-sec").hidden = false; $("pf-out").value = ""; $("pf-out-msg").textContent = r.msg; $("pf-out-sec").scrollIntoView({ block: "center" }); } } });
   const cells = () => { const rows = pfShown(), T = a => a.map(v => { const c = String(v ?? "").replace(/[\t\r\n]+/g, " "); return typeof v === "string" && /^[=+\-@]/.test(c) ? "'" + c : c; }).join("\t");
     return PUB ? [T(["Received", "Entry", "Intervention", "Setting", "Implementer", "Cost per DALY, central", "Best case", "Worst case", "Factors", "Checked", "A year later", "Issues", "Corrections", "Label"])].concat(rows.map(r => T([stamp(r), r.no + " v" + r.revs.length, pubIv(r), pubPlace(r), pubWho(r), isNum(r.r.cpd[1]) ? r.r.cpd[1] : r.r.cpd[1] || "", isNum(r.r.cpd[0]) ? r.r.cpd[0] : r.r.cpd[0] || "", isNum(r.r.cpd[2]) ? r.r.cpd[2] : r.r.cpd[2] || "", r.r.status, r.chk, yearLater(r), r.revs.length, r.corr.trim() ? r.corr.trim().split(/\n+/).length : 0, LABEL]))).join("\n")
       : [T(["Program", "Organization", "Place", "Intervention", "Sector", "Units a year", "Annual cost", "DALYs averted a year", "Cost per DALY, best", "Cost per DALY, central", "Cost per DALY, worst", "Cost per DALY, health and climate together, central", "Rate, metric tons CO2e for each DALY", "Reading", "Factors", "Setting", "Pathways counted", "Not counted", "Checked", "A year later", "Added", "Label"])].concat(rows.map(r => { const x = r.r, v = (a, i) => a && (isNum(a[i]) || a[i]) ? a[i] : "";
@@ -2435,7 +2453,7 @@ function pfStart() {
   $("pf-cells").addEventListener("click", () => pfOut(cells(), "The entries shown, as cells to paste into a spreadsheet."));
   $("pf-save").addEventListener("click", () => { if (!PF.rows.some(r => !r.ph)) { $("pf-out-sec").hidden = false; $("pf-out").value = ""; $("pf-out-msg").textContent = PF.rows.length ? "Placeholder entries are not saved. Add real entries first." : "There is no entry to save yet."; return; } pfOut(pfListText(), "This list, to keep and paste back into \"Add entries\" later."); });
   $("pf-download").addEventListener("click", () => pfFile("CHLP_shared_entries_DRAFT_" + isoToday() + ".txt", cells()));
-  $("pf-entry-o").addEventListener("click", () => pfOpenEntry(PF.entry, "o")); $("pf-entry-r").addEventListener("click", () => pfOpenEntry(PF.entry, "r")); $("pf-entry-close").addEventListener("click", pfCloseEntry);
+  $("pf-entry-s").addEventListener("click", () => pfShowSum(PF.entry)); $("pf-entry-o").addEventListener("click", () => pfOpenEntry(PF.entry, "o")); $("pf-entry-r").addEventListener("click", () => pfOpenEntry(PF.entry, "r")); $("pf-entry-close").addEventListener("click", pfCloseEntry);
   $("pf-ph-load").addEventListener("click", pfPlaceholders); $("pf-ph-clear").addEventListener("click", pfClearPlaceholders);
   pfRest(); pfRender();
   if ((location.hash || "").toLowerCase().includes("placeholders")) pfPlaceholders();
