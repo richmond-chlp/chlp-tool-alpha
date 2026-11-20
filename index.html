@@ -227,6 +227,19 @@ footer{font-size:.82rem;color:var(--muted)}
 .sheet td.noted::after{border-width:0 11px 11px 0;border-color:transparent var(--note) transparent transparent}
 .sheet tr.hasref td.noted::after{border-width:0 12px 12px 0;border-color:transparent var(--bad) transparent transparent!important}
 .refkey i.nk{border-color:transparent var(--note) transparent transparent;margin-left:10px}
+/* Every red corner opens; larger corners (pass 26) */
+.sheet td.noted::after{border-width:0 14px 14px 0}
+.sheet tr.hasref td.noted::after{border-width:0 16px 16px 0}
+.sheet tr.hasref td.noted{cursor:pointer}
+.pdfov.nofile .pdfbar{display:none}
+.pdfmissing{margin:16px;padding:12px 14px;border-left:4px solid var(--bad);background:var(--surface);color:var(--ink);line-height:1.5;max-width:60ch}
+/* Corners in every view (pass 26d) */
+button.vc{display:inline-block;width:24px;height:24px;min-height:0;min-width:0;padding:0;margin:-4px 0 -4px 4px;border:0;border-radius:0;background:linear-gradient(to bottom left,var(--bad) 50%,transparent 50%) top right/16px 16px no-repeat;vertical-align:top;cursor:pointer;box-shadow:none}
+button.vc.nk{background:linear-gradient(to bottom left,var(--note) 50%,transparent 50%) top right/14px 14px no-repeat}
+button.vc:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.pdfmissing.note{border-left-color:var(--note)}
+
+
 
 section p,details p,section .hint,details .hint,.sharebox p,.brpoint p,.pfrec p,.fhelp p,.guide p,.note p,details.fhelp p{max-width:none}
 .sheet td.noted .srcbtn{position:absolute;top:0;right:0;width:24px;height:24px;padding:0;border:0;background:transparent;border-radius:0;cursor:pointer}
@@ -489,7 +502,7 @@ button.linkb{border:0;background:none;padding:0;color:var(--accent);text-decorat
   <section aria-labelledby="h-map" class="map" id="sec-map">
     <h2 id="h-map">The full logic: how the result is reached</h2>
     <p class="hint">A sheet of the whole calculation, for checking. Select a cell to see its formula and the cells it reads. Each row names its source and the place in it. Nothing here changes your entry.</p>
-    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Where the study is attached, select that cell to open it at the marked passage; it stays open until you close it. <i class="nk"></i>A purple corner marks a figure with a note only. Load the example at the top of the page to see both.</p>
+    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Select that cell to open the study at the marked passage. Where the study is not attached, the cell shows the citation and its page instead. Either stays open until you close it. <i class="nk"></i>A purple corner marks a figure with a note only. Load the example at the top of the page to see both.</p>
     <div id="led-slot-r"></div>
     <div id="map"></div>
     <div class="noteed" id="note-ed" hidden>
@@ -831,7 +844,7 @@ function render() {
   $("hc-note").hidden = m.hf === null;
   $("meta").innerHTML = p ? `<dt>Pathways counted</dt><dd id="m-counted">${esc(m.counted)}</dd><dt>Not counted</dt><dd>${esc(m.own ? "Anything you do not enter" : p.left)}</dd><dt>Setting of the figures</dt><dd id="m-setting">${esc(m.setting)}</dd><dt>How the cost was entered</dt><dd id="m-cost">${esc(m.costHow)}</dd><dt>Factors used</dt><dd>${m.own ? "Your own figures, in place of CHLP's defaults" : esc(p.status)}</dd><dt>Cheaper alternative on record</dt><dd>${esc(p.alt || "None on record for this intervention")}</dd><dt>Health-care costs: evidence on record</dt><dd id="m-hcnote">${esc(p.hcNote || "None on record for this intervention")}</dd><dt>Defaults the tool used</dt><dd id="m-defaults">${esc(defaultsText(m))}</dd><dt>How a funder would read this entry</dt><dd id="m-funder">${esc(funderText(m)) || "Shown once the entry has a central cost per DALY."}</dd><dt>The comparison</dt><dd id="m-compare">The bar of about ${moneyFull(BAR)} per DALY is the one CHLP tests against. It is the bar implied by Coefficient Giving's request for proposals.${m.usShow ? " The US yardstick is a rough comparison for programs in the United States; the bar stays as it is." + usNote(m) : ""} Figures of $1,000 and more are rounded to three significant figures here; the copied entry has every digit.</dd>` : "";
   $("label-line").textContent = m.label;
-  renderSum(m); renderLedgers(m); renderGuide(m); renderMap(m);
+  renderSum(m); renderLedgers(m); renderGuide(m); renderMap(m); markFigs(m);
   $("about").hidden = !p; if (m.own) $("about").open = true;          // your own intervention: its instructions stay in view
   renderTracker(m, t, issues.trk);
   $("entry").value = entryText(m, t, issues);
@@ -1122,7 +1135,10 @@ function addMarks(rects, text) {
   $("pdf-msg").textContent = (n.m.length >= 60 ? "Marked. A row holds 60 marks at most." : "Marked."); dirty = true; drawMarks(); render();
 }
 async function openPdf(k, pin) {
-  const n = noteOf(k), f = n && files[n.file]; if (!f) return;
+  const n = noteOf(k), f = n && n.file && files[n.file]; if (!n) return;
+  $("pdf-ov").classList.toggle("nofile", !f);
+  if (!f) { $("pdf-name").textContent = n.file || "A note on this figure, with no study"; $("pdf-where").textContent = (pageOf(n) ? "Page " + pageOf(n) + ". " : "") + (n.pass || ""); $("pdf-note").textContent = n.text ? "The note on \"" + keyLabel(k) + "\": " + n.text : "";
+    ovKey = k; if (pin) ovPinned = true; pv.token++; pv.doc = null; pv.name = ""; $("pdf-pages").innerHTML = n.file ? '<p class="pdfmissing">This figure cites the study named above. Its file is not attached on this page: a shared entry carries its notes and citations as text, and never its files. Ask the implementer for the study, or open your own copy beside this page.</p>' : '<p class="pdfmissing note">This figure carries a note and cites no study. The note is shown above.</p>'; $("pdf-ov").hidden = false; return; }
   $("pdf-name").textContent = n.file; $("pdf-where").textContent = (pageOf(n) ? "Page " + pageOf(n) + ". " : "") + (n.pass || "");
   $("pdf-note").textContent = n.text ? "Your note on \"" + keyLabel(k) + "\": " + n.text : "";
   const same = ovKey === k && !$("pdf-ov").hidden; ovKey = k; if (pin) ovPinned = true; $("pdf-ov").hidden = false; if (same && pv.name === n.file) return;
@@ -1254,7 +1270,7 @@ function renderMap(m) {
       const shown = showF && g.f && isNum(x) ? "=" + esc(g.f[i]) : esc(cellFmt(g, x));
       return `<td class="c ${g.cls}${a === selA ? " sel" : ""}${pre.has(a) ? " pre" : ""}${showF && g.f ? " txt" : ""}" data-a="${a}" tabindex="${a === selA ? 0 : -1}" title="${isNum(x) ? x : ""}">${shown}</td>`; }).join("");
     const un = noteOf(g.k), hasSrc = !!(un && un.file && files[un.file]), hasRef = !!(un && un.file);
-    return `<tr${hid} data-k="${esc(g.k)}"${hasRef ? ' class="hasref' + (hasSrc ? " hassrc" : "") + '"' : ""}><th scope="row">${g.n}</th><td class="txt${un ? " noted" : ""}"${un ? ' title="' + (hasRef ? "This row cites a study: " + esc(un.file) + (hasSrc ? ". Select the cell to open it." : ". The file is not attached on this page.") : "This row has a note") + '"' : ""}>${esc(g.label)}${hasSrc ? `<button type="button" class="srcbtn" aria-label="Open the study for this row: ${esc(rowKey(g.label))}"></button>` : ""}</td>${tds}<td class="txt how">${esc(g.how || "")}</td><td class="txt">${esc(g.f ? "Formula" : g.status || "")}</td><td class="txt src">${esc(g.f ? "Computed on this sheet" : g.src || "")}</td></tr>`;
+    return `<tr${hid} data-k="${esc(g.k)}"${hasRef ? ' class="hasref' + (hasSrc ? " hassrc" : "") + '"' : ""}><th scope="row">${g.n}</th><td class="txt${un ? " noted" : ""}"${un ? ' title="' + (hasRef ? "This row cites a study: " + esc(un.file) + (hasSrc ? ". Select the cell to open it." : ". The file is not attached on this page.") : "This row has a note") + '"' : ""}>${esc(g.label)}${hasRef ? `<button type="button" class="srcbtn" aria-label="${hasSrc ? "Open the study for this row" : "Show the study this row cites"}: ${esc(rowKey(g.label))}"></button>` : ""}</td>${tds}<td class="txt how">${esc(g.how || "")}</td><td class="txt">${esc(g.f ? "Formula" : g.status || "")}</td><td class="txt src">${esc(g.f ? "Computed on this sheet" : g.src || "")}</td></tr>`;
   }).join("");
   const fx = !selRow ? "" : selRow.f && isNum(selRow.v[selI]) ? "= " + selRow.f[selI].replace(/([*/+])/g, " $1 ") : isNum(selRow.v && selRow.v[selI]) ? String(selRow.v[selI]) : "";
   const kind = !selRow ? "" : selRow.f ? "A formula. The cells it reads are outlined." : selRow.cls === "in" ? "A figure you typed." : "A fixed factor: see its source in column G.";
@@ -1669,6 +1685,7 @@ function loadExample() {
   const sf = samplePdf(), iv = $("intervention").value, mark = pg => [[pg, 0.11, 0.172, 0.74, 0.03]]; files[SAMPLE] = { file: sf, size: sf.size, doc: null };
   cellNotes[iv + " | Outcome for each unit"] = { text: "Example of a note. A reviewer writes here which table of the study gives this figure. The file attached is an invented sample. It is a stand-in for the trial's own paper.", file: SAMPLE, page: "2", pass: "Table 2 (invented)", m: mark(2) };
   cellNotes[iv + " | Total cost over the years"] = { text: "Example of a note. The cost comes from the budget table of the sample file.", file: SAMPLE, page: "3", pass: "Table 5 (invented)", m: mark(3) };
+  cellNotes[iv + " | Units delivered a year"] = { text: "Example of a note with no study. A reviewer writes here where the count comes from, for instance the ward register on which the tracker below draws.", file: "", page: "", pass: "" };
   cellNotes[iv + " | Years the spending covers"] = { text: "Example of a note with no study. A reviewer writes here why ten years is used, for instance the working life of the equipment as the implementer reported it.", file: "", page: "", pass: "" };
 }
 function showStatus() {   // the example note, and whether the entry has been copied since it last changed (repair 16)
@@ -1729,6 +1746,16 @@ function funderEntry() {
   const d = snapshot(); FOR_CHLP.forEach(k => { delete d.t[k]; }); d.s["fb-dec"] = ""; d.s["fu-keep"] = ""; d.s["fu-check"] = "";   // ruling 352: the two answers that concern CHLP alone stay out
   const body = b32enc(JSON.stringify(d)), lines = body.match(/.{1,60}/g) || [];
   return "COPY FOR A FUNDER. Left out: the contact for CHLP, the two answers on consent that concern CHLP alone, the answers on how the result is used, and the feedback on the tool.\n\n" + text + "\n" + ["CHLP-SAVE-BEGIN"].concat(lines, "CHLP-SAVE-END " + fnv(body)).join("\n");
+}
+const FIG_IN = { "Units delivered a year": () => $("unitlab").parentElement, "Years the spending covers": () => document.querySelector('label[for="years"]'),
+  "Total cost over the years": () => $("total").querySelector(".lab"), "Share that would have happened anyway": () => document.querySelector('label[for="cf"]') };
+const FIG_ALIAS = { "Outcome per unit": "Outcome for each unit", "DALYs per outcome": "DALYs for each outcome" };
+function markFigs(m) {    // pass 26: the corners of the sheet, repeated beside the inputs and on the program officer's rows, so every view shows them
+  document.querySelectorAll("button.vc").forEach(b => b.remove()); if (!m.p) return;
+  const put = (el, label) => { const k = m.p.name + " | " + label, n = el && noteOf(k); if (!n) return; const ref = !!n.file;
+    el.insertAdjacentHTML("beforeend", `<button type="button" class="vc${ref ? " ref" : " nk"}" data-k="${esc(k)}" title="${ref ? "This figure cites a study: " + esc(n.file) : "This figure has a note: " + esc(String(n.text || "").slice(0, 200))}" aria-label="${ref ? "Show the study this figure cites" : "Show the note on this figure"}: ${esc(label)}"></button>`); };
+  Object.keys(FIG_IN).forEach(l => put(FIG_IN[l](), l));
+  $("rows").querySelectorAll("tr").forEach(tr => { const c = tr.cells[0]; if (!c) return; const l = rowKey(c.textContent); put(c, FIG_ALIAS[l] || l); });
 }
 function shedExample() {   // repair 6: the example's notes and study do not travel into a real entry
   let n = 0; Object.keys(cellNotes).forEach(k => { const c = cellNotes[k]; if (c.file === SAMPLE || (!c.file && /^Example of a note/.test(c.text || ""))) { delete cellNotes[k]; n++; } }); dropSample(); return n;
@@ -1838,7 +1865,8 @@ function start() {
     dropDoc(name); delete files[name]; if (ovKey && noteOf(ovKey) && noteOf(ovKey).file === name) closePdf(); fillFiles($("note-file").value); render(); });
   // pointing at a row with an attached study opens it beside the sheet, at the page noted; leaving closes it, unless the button opened it
   const later = fn => { clearTimeout(ovT); ovT = setTimeout(fn, 350); };
-  $("map").addEventListener("click", e => { const td = e.target.closest("tr.hassrc td.noted"); if (td) { clearTimeout(ovT); openPdf(td.parentElement.dataset.k, true); } });      // only a click or a tap on the corner cell opens the study, so it never opens by accident
+  document.addEventListener("click", e => { const b = e.target.closest("button.vc"); if (b) { e.preventDefault(); clearTimeout(ovT); openPdf(b.dataset.k, true); } });      // pass 26: a corner beside an input or on an officer row
+  $("map").addEventListener("click", e => { const td = e.target.closest("tr.hasref td.noted"); if (td) { clearTimeout(ovT); openPdf(td.parentElement.dataset.k, true); } });      // only a click or a tap on the corner cell opens the study, so it never opens by accident
   $("pdf-close").addEventListener("click", closePdf);
   document.querySelector(".wrap").addEventListener("click", e => { const b = e.target.closest("button[data-go]"); if (b) goInput(b.dataset.go); });
   $("br-reset").addEventListener("click", () => { $("br-c").value = BR.def.toLocaleString("en-US"); $("br-low").value = ""; $("br-high").value = ""; $("br-src").value = BR.src; render(); });
