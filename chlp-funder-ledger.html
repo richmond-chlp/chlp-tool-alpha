@@ -404,6 +404,18 @@ html.pfover .wrap .who #who-lab,html.pfover .wrap .who .who-btns{display:none}
 html.pfover #pf-sum{position:fixed;top:var(--pfbar-h,64px);left:0;right:0;bottom:0;z-index:59;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg);box-sizing:border-box;padding:18px max(16px,env(safe-area-inset-left,0px),calc((100vw - 1000px) / 2)) 40px}
 #pf-sum .pfdetail{position:static;max-width:none}
 #pf-entrybar button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+
+/* The sheet inset over the ledger, which shows dimmed at its edges (pass 23) */
+html.pfover{--pf-in-x:max(28px,calc((100vw - 1240px) / 2));--pf-in-y:28px}
+html.pfover #pf-scrim{display:block;position:fixed;inset:0;z-index:57;background:rgba(12,16,38,.55);cursor:pointer}
+html.pfover #pf-entrybar{top:var(--pf-in-y);left:var(--pf-in-x);right:var(--pf-in-x);border-radius:10px 10px 0 0;box-shadow:none;padding:10px 20px}
+html.pfover .wrap,html.pfover #pf-sum{top:calc(var(--pf-in-y) + var(--pfbar-h,64px));left:var(--pf-in-x);right:var(--pf-in-x);bottom:var(--pf-in-y);border-radius:0 0 10px 10px;box-shadow:0 18px 50px rgba(0,0,0,.4);padding-left:24px;padding-right:24px}
+@media (max-width:760px){
+  html.pfover{--pf-in-x:10px;--pf-in-y:14px}
+  html.pfover #pf-entrybar{padding:8px 12px}
+  html.pfover .wrap,html.pfover #pf-sum{padding-left:12px;padding-right:12px}
+  html.pfover .panels:not([data-who="i"]){height:calc(100dvh - var(--pfbar-h,64px) - 2 * var(--pf-in-y) - 16px)}
+}
 </style>
 
 <div class="pfwrap" id="pf">
@@ -490,6 +502,7 @@ html.pfover #pf-sum{position:fixed;top:var(--pfbar-h,64px);left:0;right:0;bottom
   <div class="note plain" id="pf-entrybar" role="region" aria-label="The opened entry" hidden><span id="pf-entry-name"></span>
     <span class="pfbtns"><button type="button" class="quiet sm" id="pf-entry-s">Summary</button><button type="button" class="quiet sm" id="pf-entry-o">Program officer's view</button><button type="button" class="quiet sm" id="pf-entry-r">Researcher's view</button><button type="button" class="sm" id="pf-entry-close" aria-keyshortcuts="Escape">Close and return to the row</button></span></div>
   <div class="pfsum" id="pf-sum" role="region" aria-label="The entry's summary" hidden></div>
+  <div class="pfscrim" id="pf-scrim" aria-hidden="true" hidden></div>
 </div>
 <div class="wrap">
   <div class="top">
@@ -2133,7 +2146,8 @@ function pfShowSum(k) {
 function pfOverlay(on) {
   const root = document.documentElement, bar = $("pf-entrybar");
   root.classList.toggle("pfover", on);
-  [...$("pf").children].forEach(c => { if (c !== bar && c.id !== "pf-sum") { if (on) c.setAttribute("inert", ""); else c.removeAttribute("inert"); } });
+  $("pf-scrim").hidden = !on;
+  [...$("pf").children].forEach(c => { if (c !== bar && c.id !== "pf-sum" && c.id !== "pf-scrim") { if (on) c.setAttribute("inert", ""); else c.removeAttribute("inert"); } });
   if (on) { root.style.setProperty("--pfbar-h", bar.offsetHeight + "px"); document.querySelector(".wrap").scrollTop = 0; $("pf-sum").scrollTop = 0; }
   else root.style.removeProperty("--pfbar-h");
 }
@@ -2453,7 +2467,7 @@ function pfStart() {
   $("pf-cells").addEventListener("click", () => pfOut(cells(), "The entries shown, as cells to paste into a spreadsheet."));
   $("pf-save").addEventListener("click", () => { if (!PF.rows.some(r => !r.ph)) { $("pf-out-sec").hidden = false; $("pf-out").value = ""; $("pf-out-msg").textContent = PF.rows.length ? "Placeholder entries are not saved. Add real entries first." : "There is no entry to save yet."; return; } pfOut(pfListText(), "This list, to keep and paste back into \"Add entries\" later."); });
   $("pf-download").addEventListener("click", () => pfFile("CHLP_shared_entries_DRAFT_" + isoToday() + ".txt", cells()));
-  $("pf-entry-s").addEventListener("click", () => pfShowSum(PF.entry)); $("pf-entry-o").addEventListener("click", () => pfOpenEntry(PF.entry, "o")); $("pf-entry-r").addEventListener("click", () => pfOpenEntry(PF.entry, "r")); $("pf-entry-close").addEventListener("click", pfCloseEntry);
+  $("pf-scrim").addEventListener("click", pfCloseEntry); $("pf-entry-s").addEventListener("click", () => pfShowSum(PF.entry)); $("pf-entry-o").addEventListener("click", () => pfOpenEntry(PF.entry, "o")); $("pf-entry-r").addEventListener("click", () => pfOpenEntry(PF.entry, "r")); $("pf-entry-close").addEventListener("click", pfCloseEntry);
   $("pf-ph-load").addEventListener("click", pfPlaceholders); $("pf-ph-clear").addEventListener("click", pfClearPlaceholders);
   pfRest(); pfRender();
   if ((location.hash || "").toLowerCase().includes("placeholders")) pfPlaceholders();
