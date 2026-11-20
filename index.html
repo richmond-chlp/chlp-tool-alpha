@@ -238,6 +238,12 @@ button.vc{display:inline-block;width:24px;height:24px;min-height:0;min-width:0;p
 button.vc.nk{background:linear-gradient(to bottom left,var(--note) 50%,transparent 50%) top right/14px 14px no-repeat}
 button.vc:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .pdfmissing.note{border-left-color:var(--note)}
+/* A corner outside the sheet sits in the top-right corner of what it annotates (pass 26f) */
+.vchost{position:relative}
+.vchost > button.vc{position:absolute;top:0;right:0;margin:0;z-index:1}
+.vcin > button.vc{top:1px;right:1px}
+#off-home button.vc{display:none}   /* pass 26g: the metrics folded into the body of the page carry no corners */
+
 
 
 
@@ -1747,15 +1753,15 @@ function funderEntry() {
   const body = b32enc(JSON.stringify(d)), lines = body.match(/.{1,60}/g) || [];
   return "COPY FOR A FUNDER. Left out: the contact for CHLP, the two answers on consent that concern CHLP alone, the answers on how the result is used, and the feedback on the tool.\n\n" + text + "\n" + ["CHLP-SAVE-BEGIN"].concat(lines, "CHLP-SAVE-END " + fnv(body)).join("\n");
 }
-const FIG_IN = { "Units delivered a year": () => $("unitlab").parentElement, "Years the spending covers": () => document.querySelector('label[for="years"]'),
-  "Total cost over the years": () => $("total").querySelector(".lab"), "Share that would have happened anyway": () => document.querySelector('label[for="cf"]') };
+const FIG_IN = { "Units delivered a year": () => $("u-c").parentElement, "Years the spending covers": () => $("years").parentElement,
+  "Total cost over the years": () => $("tot-c").parentElement, "Share that would have happened anyway": () => $("cf").parentElement };   // pass 26f: the corner sits on the input box itself
 const FIG_ALIAS = { "Outcome per unit": "Outcome for each unit", "DALYs per outcome": "DALYs for each outcome" };
 function markFigs(m) {    // pass 26: the corners of the sheet, repeated beside the inputs and on the program officer's rows, so every view shows them
   document.querySelectorAll("button.vc").forEach(b => b.remove()); if (!m.p) return;
   const put = (el, label) => { const k = m.p.name + " | " + label, n = el && noteOf(k); if (!n) return; const ref = !!n.file;
     el.insertAdjacentHTML("beforeend", `<button type="button" class="vc${ref ? " ref" : " nk"}" data-k="${esc(k)}" title="${ref ? "This figure cites a study: " + esc(n.file) : "This figure has a note: " + esc(String(n.text || "").slice(0, 200))}" aria-label="${ref ? "Show the study this figure cites" : "Show the note on this figure"}: ${esc(label)}"></button>`); };
-  Object.keys(FIG_IN).forEach(l => put(FIG_IN[l](), l));
-  $("rows").querySelectorAll("tr").forEach(tr => { const c = tr.cells[0]; if (!c) return; const l = rowKey(c.textContent); put(c, FIG_ALIAS[l] || l); });
+  // pass 26g: no corners beside the inputs in the body of the page; they sit only on the metrics and the sheet
+  $("rows").querySelectorAll("tr").forEach(tr => { const c = tr.cells[0]; if (!c) return; const l = rowKey(c.textContent); c.classList.add("vchost"); put(c, FIG_ALIAS[l] || l); });
 }
 function shedExample() {   // repair 6: the example's notes and study do not travel into a real entry
   let n = 0; Object.keys(cellNotes).forEach(k => { const c = cellNotes[k]; if (c.file === SAMPLE || (!c.file && /^Example of a note/.test(c.text || ""))) { delete cellNotes[k]; n++; } }); dropSample(); return n;
