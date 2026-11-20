@@ -2152,7 +2152,7 @@ function pfOverlay(on) {
   else root.style.removeProperty("--pfbar-h");
 }
 window.addEventListener("resize", () => { if (document.documentElement.classList.contains("pfover")) document.documentElement.style.setProperty("--pfbar-h", $("pf-entrybar").offsetHeight + "px"); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && PF.entry && $("pdf-ov").hidden) { e.preventDefault(); pfCloseEntry(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && PF.entry && $("pdf-ov").hidden) { e.preventDefault(); pfCloseEntry(); } }, true);   // capture: an open study is seen before its own handler closes it
 const pfFields = () => document.querySelectorAll(".wrap input, .wrap select, .wrap textarea");
 function pfLock() { pfFields().forEach(e => { if (!e.closest("#pdf-ov") && !e.closest("#bridge")) e.disabled = true; }); }   // the rate of the optional reading is the reader's own, so it stays open
 function pfUnlock() { pfFields().forEach(e => { if (!e.closest("#pdf-ov")) e.disabled = false; }); }
