@@ -226,12 +226,15 @@ footer{font-size:.82rem;color:var(--muted)}
 :root[data-theme="dark"]{--note:#c9a7f5}
 .sheet td.noted::after{border-width:0 11px 11px 0;border-color:transparent var(--note) transparent transparent}
 .sheet tr.hasref td.noted::after{border-width:0 12px 12px 0;border-color:transparent var(--bad) transparent transparent!important}
-.refkey i.nk{border-color:transparent var(--note) transparent transparent;margin-left:10px}
+.refkey i.nk{border-color:transparent var(--note) transparent transparent;margin-left:0}
+.sheet tr[data-k] td.noted{cursor:pointer}
 /* Every red corner opens; larger corners (pass 26) */
 .sheet td.noted::after{border-width:0 14px 14px 0}
 .sheet tr.hasref td.noted::after{border-width:0 16px 16px 0}
 .sheet tr.hasref td.noted{cursor:pointer}
 .pdfov.nofile .pdfbar{display:none}
+.pdfov.nofile{height:auto;max-height:90vh} .pdfov.nofile .pdfpages{background:var(--surface);padding:0 0 4px}
+@media (max-width:760px){ .pdfov.nofile{inset:auto 0 0 0;border-radius:8px 8px 0 0} }
 .pdfmissing{margin:16px;padding:12px 14px;border-left:4px solid var(--bad);background:var(--surface);color:var(--ink);line-height:1.5;max-width:60ch}
 /* Corners in every view (pass 26d) */
 button.vc{display:inline-block;width:24px;height:24px;min-height:0;min-width:0;padding:0;margin:-4px 0 -4px 4px;border:0;border-radius:0;background:linear-gradient(to bottom left,var(--bad) 50%,transparent 50%) top right/16px 16px no-repeat;vertical-align:top;cursor:pointer;box-shadow:none}
@@ -508,7 +511,7 @@ button.linkb{border:0;background:none;padding:0;color:var(--accent);text-decorat
   <section aria-labelledby="h-map" class="map" id="sec-map">
     <h2 id="h-map">The full logic: how the result is reached</h2>
     <p class="hint">A sheet of the whole calculation, for checking. Select a cell to see its formula and the cells it reads. Each row names its source and the place in it. Nothing here changes your entry.</p>
-    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Select that cell to open the study at the marked passage. Where the study is not attached, the cell shows the citation and its page instead. Either stays open until you close it. <i class="nk"></i>A purple corner marks a figure with a note only. Load the example at the top of the page to see both.</p>
+    <p class="refkey"><i></i>A red corner marks a figure that cites a study. Select that cell to open the study at the marked passage. Where the study is not attached, the cell shows the citation and its page instead. Either stays open until you close it.<br><i class="nk"></i>A purple corner marks a figure with a note only. Select that cell to read the note. Load the example at the top of the page to see both.</p>
     <div id="led-slot-r"></div>
     <div id="map"></div>
     <div class="noteed" id="note-ed" hidden>
@@ -1276,7 +1279,7 @@ function renderMap(m) {
       const shown = showF && g.f && isNum(x) ? "=" + esc(g.f[i]) : esc(cellFmt(g, x));
       return `<td class="c ${g.cls}${a === selA ? " sel" : ""}${pre.has(a) ? " pre" : ""}${showF && g.f ? " txt" : ""}" data-a="${a}" tabindex="${a === selA ? 0 : -1}" title="${isNum(x) ? x : ""}">${shown}</td>`; }).join("");
     const un = noteOf(g.k), hasSrc = !!(un && un.file && files[un.file]), hasRef = !!(un && un.file);
-    return `<tr${hid} data-k="${esc(g.k)}"${hasRef ? ' class="hasref' + (hasSrc ? " hassrc" : "") + '"' : ""}><th scope="row">${g.n}</th><td class="txt${un ? " noted" : ""}"${un ? ' title="' + (hasRef ? "This row cites a study: " + esc(un.file) + (hasSrc ? ". Select the cell to open it." : ". The file is not attached on this page.") : "This row has a note") + '"' : ""}>${esc(g.label)}${hasRef ? `<button type="button" class="srcbtn" aria-label="${hasSrc ? "Open the study for this row" : "Show the study this row cites"}: ${esc(rowKey(g.label))}"></button>` : ""}</td>${tds}<td class="txt how">${esc(g.how || "")}</td><td class="txt">${esc(g.f ? "Formula" : g.status || "")}</td><td class="txt src">${esc(g.f ? "Computed on this sheet" : g.src || "")}</td></tr>`;
+    return `<tr${hid} data-k="${esc(g.k)}"${hasRef ? ' class="hasref' + (hasSrc ? " hassrc" : "") + '"' : ""}><th scope="row">${g.n}</th><td class="txt${un ? " noted" : ""}"${un ? ' title="' + (hasRef ? "This row cites a study: " + esc(un.file) + (hasSrc ? ". Select the cell to open it." : ". The file is not attached on this page.") : "This row has a note. Select the cell to read it.") + '"' : ""}>${esc(g.label)}${un ? `<button type="button" class="srcbtn" aria-label="${hasSrc ? "Open the study for this row" : hasRef ? "Show the study this row cites" : "Show the note on this row"}: ${esc(rowKey(g.label))}"></button>` : ""}</td>${tds}<td class="txt how">${esc(g.how || "")}</td><td class="txt">${esc(g.f ? "Formula" : g.status || "")}</td><td class="txt src">${esc(g.f ? "Computed on this sheet" : g.src || "")}</td></tr>`;
   }).join("");
   const fx = !selRow ? "" : selRow.f && isNum(selRow.v[selI]) ? "= " + selRow.f[selI].replace(/([*/+])/g, " $1 ") : isNum(selRow.v && selRow.v[selI]) ? String(selRow.v[selI]) : "";
   const kind = !selRow ? "" : selRow.f ? "A formula. The cells it reads are outlined." : selRow.cls === "in" ? "A figure you typed." : "A fixed factor: see its source in column G.";
@@ -1758,10 +1761,15 @@ const FIG_IN = { "Units delivered a year": () => $("u-c").parentElement, "Years 
 const FIG_ALIAS = { "Outcome per unit": "Outcome for each unit", "DALYs per outcome": "DALYs for each outcome" };
 function markFigs(m) {    // pass 26: the corners of the sheet, repeated beside the inputs and on the program officer's rows, so every view shows them
   document.querySelectorAll("button.vc").forEach(b => b.remove()); if (!m.p) return;
-  const put = (el, label) => { const k = m.p.name + " | " + label, n = el && noteOf(k); if (!n) return; const ref = !!n.file;
-    el.insertAdjacentHTML("beforeend", `<button type="button" class="vc${ref ? " ref" : " nk"}" data-k="${esc(k)}" title="${ref ? "This figure cites a study: " + esc(n.file) : "This figure has a note: " + esc(String(n.text || "").slice(0, 200))}" aria-label="${ref ? "Show the study this figure cites" : "Show the note on this figure"}: ${esc(label)}"></button>`); };
+  const done = new Set(), put = (el, label, via) => { const k = m.p.name + " | " + label, n = el && noteOf(k); if (!n || done.has(k)) return; done.add(k); const ref = !!n.file, at = el.querySelectorAll("button.vc").length;
+    el.insertAdjacentHTML("beforeend", `<button type="button" class="vc${ref ? " ref" : " nk"}" data-k="${esc(k)}"${at ? ' style="right:' + (at % 3) * 20 + "px;top:" + Math.floor(at / 3) * 20 + 'px"' : ""} title="${via ? esc(label) + ". " : ""}${ref ? "This figure cites a study: " + esc(n.file) : "This figure has a note: " + esc(String(n.text || "").slice(0, 200))}" aria-label="${ref ? "Show the study this figure cites" : "Show the note on this figure"}: ${esc(label)}"></button>`);
+    el.style.paddingRight = Math.min(at + 1, 3) * 20 + 4 + "px"; if (at >= 3) el.style.height = (Math.floor(at / 3) + 1) * 20 + 4 + "px"; };
   // pass 26g: no corners beside the inputs in the body of the page; they sit only on the metrics and the sheet
-  $("rows").querySelectorAll("tr").forEach(tr => { const c = tr.cells[0]; if (!c) return; const l = rowKey(c.textContent); c.classList.add("vchost"); put(c, FIG_ALIAS[l] || l); });
+  $("rows").querySelectorAll("tr").forEach(tr => { const c = tr.cells[0]; if (!c) return; const l = rowKey(c.textContent); c.classList.add("vchost"); c.style.paddingRight = ""; c.style.height = ""; put(c, FIG_ALIAS[l] || l); });
+  // pass 27: a note on a sheet row with no row of its own in the metrics sits on the row it feeds, so every note shows in both views
+  const cells = {}; $("rows").querySelectorAll("tr").forEach(tr => { if (tr.cells[0]) cells[rowKey(tr.cells[0].textContent)] = tr.cells[0]; });
+  Object.keys(cellNotes).forEach(k => { if (!k.startsWith(m.p.name + " | ") || done.has(k)) return; const l = keyLabel(k);
+    put(/cost|year|discount|spending/i.test(l) && cells["Annual cost"] || cells["Cost per DALY averted"] || cells["Annual cost"], l, true); });
 }
 function shedExample() {   // repair 6: the example's notes and study do not travel into a real entry
   let n = 0; Object.keys(cellNotes).forEach(k => { const c = cellNotes[k]; if (c.file === SAMPLE || (!c.file && /^Example of a note/.test(c.text || ""))) { delete cellNotes[k]; n++; } }); dropSample(); return n;
@@ -1872,7 +1880,7 @@ function start() {
   // pointing at a row with an attached study opens it beside the sheet, at the page noted; leaving closes it, unless the button opened it
   const later = fn => { clearTimeout(ovT); ovT = setTimeout(fn, 350); };
   document.addEventListener("click", e => { const b = e.target.closest("button.vc"); if (b) { e.preventDefault(); clearTimeout(ovT); openPdf(b.dataset.k, true); } });      // pass 26: a corner beside an input or on an officer row
-  $("map").addEventListener("click", e => { const td = e.target.closest("tr.hasref td.noted"); if (td) { clearTimeout(ovT); openPdf(td.parentElement.dataset.k, true); } });      // only a click or a tap on the corner cell opens the study, so it never opens by accident
+  $("map").addEventListener("click", e => { const td = e.target.closest("tr[data-k] td.noted");   /* pass 27: a purple corner opens its note too */ if (td) { clearTimeout(ovT); openPdf(td.parentElement.dataset.k, true); } });      // only a click or a tap on the corner cell opens the study, so it never opens by accident
   $("pdf-close").addEventListener("click", closePdf);
   document.querySelector(".wrap").addEventListener("click", e => { const b = e.target.closest("button[data-go]"); if (b) goInput(b.dataset.go); });
   $("br-reset").addEventListener("click", () => { $("br-c").value = BR.def.toLocaleString("en-US"); $("br-low").value = ""; $("br-high").value = ""; $("br-src").value = BR.src; render(); });
