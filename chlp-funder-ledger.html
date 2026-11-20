@@ -151,6 +151,27 @@ footer{font-size:.82rem;color:var(--muted)}
 .sheet td.pre{outline:2px dashed var(--head-line);outline-offset:-2px}
 .sheet td.c:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .sheet tr.blk td{background:var(--head);text-align:left;padding:2px 4px}
+/* Frozen top row and left column (pass 19) */
+.sheetbox{overflow:auto;max-height:min(78vh,820px);overscroll-behavior:contain;border:1px solid var(--line);border-radius:4px}
+.sheetbox:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sheet{border-collapse:separate;border-spacing:0}
+.sheet th,.sheet td{border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sheet thead th{position:sticky;top:0;z-index:3;height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
+.sheet tr.hd td,.sheet tr.hd th{position:sticky;top:28px;z-index:3;box-shadow:0 2px 0 var(--head-line)}
+.sheet th:first-child{position:sticky;left:0;z-index:2;width:2.6rem;min-width:2.6rem;max-width:2.6rem;box-sizing:border-box;background:var(--bg)}
+.sheet tbody td:nth-child(2){position:sticky;left:2.6rem;z-index:2;background:var(--surface);box-shadow:2px 0 0 var(--head-line)}
+.sheet tr.hd td:nth-child(2){background:var(--bg)}
+.sheet thead th:first-child,.sheet thead th:nth-child(2){position:sticky;z-index:5}
+.sheet thead th:nth-child(2){left:2.6rem;box-shadow:2px 0 0 var(--head-line)}
+.sheet tr.hd th:first-child,.sheet tr.hd td:nth-child(2){z-index:4}
+.sheet tr.blk td:nth-child(2){position:static;box-shadow:none;background:var(--head)}
+.sheet tr.blk .tw{position:sticky;left:2.6rem}
+.sheet tr.chk td:nth-child(2){background:var(--surface)}
+.sheet tr.hd td{white-space:nowrap}
+@media (max-width:760px){
+  .sheetbox{max-height:calc(50dvh - 110px);min-height:200px}
+  .sheet tbody td:nth-child(2),.sheet tr.hd td:nth-child(2){min-width:13ch;max-width:16ch;white-space:normal}
+}
 .sheet tr.chk td{font-weight:600}
 .sheet .tw{background:transparent;border:0;color:var(--ink);padding:3px 4px;font-weight:700;text-align:left}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .map{--typed:#93B4FF;--fixed:#7FD3A0} }
@@ -368,6 +389,9 @@ table.pft:not(.pfq) tbody tr.pfrow:first-child > td{border-top:0}
 .pfaxis em{font-style:normal}
 .pfus{position:absolute;top:-6px;bottom:-6px;width:0;border-left:3px dotted var(--actual);z-index:1}
 .pfmode .guidebar{display:none}
+
+table.pfq tr.pfqh th{text-align:left!important;background:var(--head);color:var(--ink);font-weight:600;padding-top:8px}
+#pf-why summary{cursor:pointer;font-weight:600;margin:12px 0 6px}
 </style>
 
 <div class="pfwrap" id="pf">
@@ -428,7 +452,6 @@ table.pft:not(.pfq) tbody tr.pfrow:first-child > td{border-top:0}
     <div class="pfbar">
       <div class="field"><label for="pf-peers">Peers</label><select id="pf-peers"><option value="all">Every entry shown in the ledger</option><option value="same">Same intervention as the first one ticked</option></select></div>
       <div class="field"><label for="pf-ledger">Ledger</label><select id="pf-ledger"><option value="all">All three, with the cost</option><option value="health">Health</option><option value="climate">Climate</option><option value="animal">Animal welfare</option></select></div>
-      <div class="field"><span class="lab" id="pf-cv-lab">Compare as</span><div class="pfbtns" role="group" aria-labelledby="pf-cv-lab"><button type="button" class="quiet sm" id="pf-cv-o" aria-pressed="true">Program officer</button><button type="button" class="quiet sm" id="pf-cv-r" aria-pressed="false">Researcher</button></div></div>
     </div>
     <p class="small" id="pf-sel-msg" role="status"></p>
     <h3 id="pf-h-scale">Cost per DALY averted: each entry's range on one scale</h3>
@@ -1427,7 +1450,7 @@ function renderMap(m) {
 <div class="tools"><button type="button" class="quiet sm" id="map-f" aria-pressed="${showF}">${showF ? "Show values" : "Show formulas"}</button>
 <button type="button" class="quiet sm" id="map-copy">Copy the sheet as cells</button> <span class="small" id="map-msg" role="status"></span>
 <span class="hint key"><span class="k in">Blue</span> you typed <span class="k fm">Black</span> a formula <span class="k fx">Green</span> a fixed factor</span></div>
-<div class="scroll"><table class="sheet" id="sheet" aria-label="The calculation as a sheet: column A names each quantity, B to D hold the three cases, E to G say how each is reached and from what source"><thead><tr><th scope="col" aria-label="Row number"></th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th><th scope="col">D</th><th scope="col">E</th><th scope="col">F</th><th scope="col">G</th></tr></thead><tbody>
+<div class="scroll sheetbox" id="sheetbox" tabindex="0" aria-label="The sheet; it scrolls inside this box, and the top row and left column stay in place"><table class="sheet" id="sheet" aria-label="The calculation as a sheet: column A names each quantity, B to D hold the three cases, E to G say how each is reached and from what source"><thead><tr><th scope="col" aria-label="Row number"></th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th><th scope="col">D</th><th scope="col">E</th><th scope="col">F</th><th scope="col">G</th></tr></thead><tbody>
 <tr class="hd"><th scope="row">1</th><td class="txt">Quantity</td><td>Best case</td><td>Central case</td><td>Worst case</td><td class="txt">How it is reached</td><td class="txt">Status</td><td class="txt">Source, and where in it</td></tr>${body}</tbody></table></div>` +
     dk("src", "Sources for this intervention, and what is recorded of each", locHtml(m)) + (!m.own && p.note ? dk("note", "What the figures assume", `<p class="small">${esc(p.note)}</p>`) : "");
   if (html !== lastMap) { box.innerHTML = html; lastMap = html; }
@@ -2052,7 +2075,7 @@ const PF_MODE = "funder";
 // This page reads several saved entries. It stores nothing and sends nothing. Every figure comes from compute(), run on each entry in turn:
 // nothing here computes a new estimate. PF_MODE is "funder" or "public", set when the page is built.
 const PUB = PF_MODE === "public";
-const PF = { meta: { funder: "", round: "", decision: "", by: "" }, rows: [], sel: [], open: "", entry: "", cview: "o", reader: false };
+const PF = { meta: { funder: "", round: "", decision: "", by: "" }, rows: [], sel: [], open: "", entry: "", reader: false };
 const LEVELS = ["Self-reported", "Documented", "Matched to an outside record"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const isoToday = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -2293,7 +2316,6 @@ function pfCompare(rows) {
     + (anyUs ? " The dotted blue line is the US yardstick of " + moneyFull(US) + ". It shows only on entries set in the United States, and it sits where each entry's cost per DALY would meet the yardstick once its deaths are counted on the US life table. " + (() => { const us = peers.filter(r => isNum(r.r.usy) && cen(r) !== null), u = us.filter(r => cen(r) <= r.r.usy).length; return u + " of " + us.length + (us.length === 1 ? " such entry is" : " such entries are") + " at or under it in the central case."; })() : "");
   const sel = PF.sel.map(byKey).filter(Boolean);
   $("pf-sel-msg").textContent = sel.length + " of up to 6 ticked." + (sel.length === 1 ? " Tick one more to compare." : "");
-  $("pf-cv-o").setAttribute("aria-pressed", String(PF.cview === "o")); $("pf-cv-r").setAttribute("aria-pressed", String(PF.cview === "r"));
   if (sel.length < 2) { $("pf-q").innerHTML = `<tbody><tr><td>Tick two to six entries above to set them side by side.</td></tr></tbody>`; $("pf-q-note").textContent = ""; $("pf-why").innerHTML = ""; return; }
   const led = $("pf-ledger").value, pct = v => Math.round(v * 100) + "%", g = (r, f) => { try { const v = f(r.r); return v === null || v === undefined || v === "" ? "" : v; } catch (e) { return ""; } };
   const Q = [
@@ -2305,14 +2327,15 @@ function pfCompare(rows) {
     ["climate", "Cost per DALY, health and climate together, at the rate above", r => pfBoth(r).t, 0],
     ["animal", "Animal welfare ledger", () => "Not yet assessed", 0],
     ["cost", "Share that would have happened anyway", r => g(r, x => x.cf === null ? "" : pct(x.cf)), 1], ["cost", "Factors", r => r.r.status, 1], ["cost", "Setting", r => r.r.setting, 1], ["cost", "Checked", r => r.chk, 0]
-  ].concat(PF.cview !== "r" ? [] : [
-    ["cost", "Outcome for each unit, central", r => g(r, x => sig(x.out[1])), 1], ["cost", "DALYs for each outcome", r => g(r, x => sig(x.dpo)), 1],
+  ].concat([
+    ["head", "The inputs behind the result"], ["cost", "Outcome for each unit, central", r => g(r, x => sig(x.out[1])), 1], ["cost", "DALYs for each outcome", r => g(r, x => sig(x.dpo)), 1],
     ["cost", "Years the spending covers", r => g(r, x => x.years === null ? "" : sig(x.years)), 1], ["cost", "How the cost was entered", r => r.r.costHow, 1]]);
-  const shown = Q.filter(q => led === "all" || q[0] === "cost" || q[0] === led);
-  $("pf-q").innerHTML = `<thead><tr>${TH2("Quantity")}${sel.map(r => TH2(esc(nameOf(r)))).join("")}</tr></thead><tbody>` + shown.map(q => { const v = sel.map(q[2]), diff = q[3] && new Set(v).size > 1;
+  const shown = Q.filter(q => led === "all" || q[0] === "cost" || q[0] === "head" || q[0] === led);
+  $("pf-q").innerHTML = `<thead><tr>${TH2("Quantity")}${sel.map(r => TH2(esc(nameOf(r)))).join("")}</tr></thead><tbody>` + shown.map(q => { if (q[0] === "head") return `<tr class="pfqh"><th scope="rowgroup" colspan="${sel.length + 1}">${q[1]}</th></tr>`; const v = sel.map(q[2]), diff = q[3] && new Set(v).size > 1;
     return `<tr><td${diff ? ' class="diff"' : ""}>${diff ? "▲ " : ""}${q[1]}</td>${v.map(c => `<td${diff ? ' class="diff"' : ""}>${esc(c) || "Not given"}</td>`).join("")}</tr>`; }).join("") + "</tbody>";
   $("pf-q-note").textContent = "▲ marks an input on which the ticked entries differ." + (new Set(sel.map(r => r.r.iv)).size > 1 ? " These entries are for unlike interventions, so their units are not alike." : "") + " Every figure is the implementer's own modeled estimate.";
-  $("pf-why").innerHTML = PF.cview !== "r" ? "" : `<h3>Why they differ: each entry's own notes and sources</h3>` + sel.map(r => `<p class="small"><b>${esc(nameOf(r))}.</b> ` + (r.r.notes.length ? r.r.notes.map(n => esc(n.k) + ": " + esc(n.text || "no text") + (n.file ? " (" + esc(n.file) + (n.page ? ", page " + esc(n.page) : "") + ")" : "")).join("; ") + "." : "No note on the sheet.") + "</p>").join("");
+  const wasOpen = !!document.querySelector("#pf-why details[open]");
+  $("pf-why").innerHTML = `<details${wasOpen ? " open" : ""}><summary>Why they differ: each entry's own notes and sources</summary>` + sel.map(r => `<p class="small"><b>${esc(nameOf(r))}.</b> ` + (r.r.notes.length ? r.r.notes.map(n => esc(n.k) + ": " + esc(n.text || "no text") + (n.file ? " (" + esc(n.file) + (n.page ? ", page " + esc(n.page) : "") + ")" : "")).join("; ") + "." : "No note on the sheet.") + "</p>").join("") + "</details>";
 }
 function pfPosition(r) {
   const peers = PF.rows.filter(x => x.r.iv === r.r.iv && cen(x) !== null).sort((a, b) => cen(a) - cen(b));
@@ -2350,7 +2373,7 @@ function pfPlaceholders() {
     mk(3, BUS, 16, 3340000, { chk: LEVELS[2], act: "9,400,000", named: true, corr: "[Date]: [what was corrected]", n: [[U, "[Counted from the fleet register, and matched to purchase orders]", "[Fleet register].pdf", "1"]] }),
     mk(4, BUS, 19, 3760000, { c: ["Yes if anonymized", "Yes", "No"] }), mk(5, BUS, 22, 4180000, { named: true }), mk(6, BUS, 25, 4600000),
     mk(7, EXH, 40, 300000, { chk: LEVELS[1] }), mk(8, CAB, 60, 90000, { x: true, t: { "extra-basis": "[Why the figures should hold here]" } })].concat(PUB ? [mk(9, BUS, 12, 2800000, { c: ["No", "No", "No"] })] : []);
-  PF.rows = rows; PF.sel = PUB ? [] : rows.slice(0, 4).map(r => r.key); PF.open = ""; if (!PUB) PF.cview = "r";
+  PF.rows = rows; PF.sel = PUB ? [] : rows.slice(0, 4).map(r => r.key); PF.open = "";
   if (!PUB) { PF.meta = { funder: "[Funder or agency]", round: "[Program or round]", decision: "[The decision these results inform]", by: "[Date]" }; }
   PF.rows.forEach(r => { r.r = pfCalc(r.d); }); pfRest(); pfSyncMeta(); pfRender();
 }
@@ -2378,7 +2401,6 @@ function pfStart() {
   ["pf-f-iv", "pf-f-chk", "pf-sort", "pf-f-work", "pf-f-extra", "pf-f-act", "pf-peers", "pf-ledger"].forEach(i => $(i).addEventListener("change", pfRender));
   $("pf-rate").addEventListener("input", pfRender); $("pf-rate-reset").addEventListener("click", () => { $("pf-rate").value = BR.def.toLocaleString("en-US"); pfRender(); });
   $("pf-reader").addEventListener("change", e => { PF.reader = e.target.checked; if (PF.entry) pfRest(); pfRender(); });
-  $("pf-cv-o").addEventListener("click", () => { PF.cview = "o"; pfRender(); }); $("pf-cv-r").addEventListener("click", () => { PF.cview = "r"; pfRender(); });
   pf.addEventListener("change", e => { const t = e.target;
     if (t.dataset.sel) { const k = t.dataset.sel; if (t.checked) { if (PF.sel.length >= 6) { t.checked = false; $("pf-sel-msg").textContent = "6 are ticked already. Untick one to compare another."; return; } if (!PF.sel.includes(k)) PF.sel.push(k); } else PF.sel = PF.sel.filter(x => x !== k); pfRender(); return; }
     if (t.dataset.rec) { const r = byKey(PF.open); if (!r) return; const f = t.dataset.rec;
