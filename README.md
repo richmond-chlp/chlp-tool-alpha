@@ -16,7 +16,7 @@ Health and climate can also be read together, through a rate that converts tons 
 
 ## The funder's ledger
 
-Open it at https://richmond-chlp.github.io/chlp-tool-alpha/chlp-funder-ledger.html. `chlp-funder-ledger.html` is a first form of a page for funders. It reads several shared entries side by side and compares peers in one portfolio. It stores nothing; entries reach it as copied text or as files the implementer sends. Placeholder entries show how it reads; every name, figure and check on them is invented, and no real entry has been checked.
+`chlp-funder-ledger.html` is a first form of a page for funders. It reads several shared entries side by side and compares peers in one portfolio. It stores nothing; entries reach it as copied text or as files the implementer sends. Placeholder entries show how it reads; every name and figure on them is invented.
 
 ## What happens to what you enter
 
@@ -31,7 +31,7 @@ Each page is about 1 MB and carries its own PDF reader for the studies behind th
 
 ## Status
 
-Alpha 0.17, November 19, 2026, built from the CHLP spreadsheet, version 0.20. A test version: figures and wording may change. A first test with program teams starts when the first team confirms.
+Alpha 0.17, November 19, 2026, built from the CHLP spreadsheet, version 0.21. On November 22, 2026, the factors were brought in line with CHLP's revised assessments: the school bus and ammonia entries open with each assessment's default of 50% for the share that would have happened anyway, and every source names the current workbook. A test version: figures and wording may change. A first test with program teams starts when the first team confirms.
 
 ## License
 
