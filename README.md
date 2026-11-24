@@ -1,4 +1,4 @@
-# The CHLP tool (alpha)
+# The CHLP tool (beta)
 
 An open tool from the Climate Health Ledger Project. An organization enters what a climate program delivers and what it costs. The tool returns the health gained, in disability-adjusted life years (DALYs) averted a year, and a cost per DALY as a best, a central and a worst case. Every result shows its inputs, sources and factors, so whoever reads it can check it.
 
@@ -31,7 +31,7 @@ Each page is about 1 MB and carries its own PDF reader for the studies behind th
 
 ## Status
 
-Alpha 0.17, November 19, 2026, built from the CHLP spreadsheet, version 0.21. On November 22, 2026, the factors were brought in line with CHLP's revised assessments: the school bus and ammonia entries open with each assessment's default of 50% for the share that would have happened anyway, and every source names the current workbook. A test version: figures and wording may change. A first test with program teams starts when the first team confirms.
+Beta 0.1, November 23, 2026, built from the CHLP spreadsheet, version 0.23. The tool is in open beta: anyone who wants to test it can, on any intervention, and give feedback. Its factors follow CHLP's assessments as reissued on November 23, 2026. Deaths convert to DALYs at the Global Burden of Disease 2023 figure for each cause and place, and the US yardstick is compared with the cost per DALY directly. Nine entries were added the same day, each checked against its assessment's own cells. They cover electric cars, sustainable aviation fuel, used vehicle imports, coal mine methane, cement, nickel smelters, air conditioners, cookstove credits and battery recycling. Each entry opens with its assessment's default for the share that would have happened anyway: 50% for most, 70% for the electric car incentive, and 80% for the vehicle standards and the cookstove credits. Every source names the current workbook. A test version: figures and wording may change.
 
 ## License
 
