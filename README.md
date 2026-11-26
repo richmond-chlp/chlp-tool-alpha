@@ -12,6 +12,12 @@ The same estimate reads at three depths. The implementer's view gives the result
 
 Each result is read on three ledgers, each in its own unit: health in DALYs, climate in metric tons of CO2e, and animal welfare. Health and climate are the work today. The animal welfare ledger is shown and marked "Not yet assessed", with no figure.
 
+The climate figure comes after the share that would have happened anyway, as the health figure does. Its cost for each metric ton of CO2e cut is read against CHLP's climate bar of $332, what buyers pay to remove carbon. That bar measures no damage, and it is never added to the health bar.
+
+## The causal chain
+
+Under each result, the page draws the causal chain: from what the money pays for, link by link, to the health it buys. Each link says what supports it: a study, the user's own records, an assumption, or a figure worked out from others. Links that could move the result across the bar are marked. A user can add a note or a study to any link, and the chain travels with the entry. The climate chain can be shown below it, and is hidden at first.
+
 Health and climate can also be read together, through a rate that converts tons of CO2e to DALYs. The page opens at CHLP's default of about 3,060 metric tons for each DALY, and the reader can change it. The evidence supports about 500 to about 8,200, so this reading never replaces the two ledgers or the headline result. Animal welfare enters no combined figure.
 
 ## The funder's ledger
@@ -31,7 +37,7 @@ Each page is about 1 MB and carries its own PDF reader for the studies behind th
 
 ## Status
 
-Beta 0.1, November 23, 2026, built from the CHLP spreadsheet, version 0.26. The tool is in open beta: anyone who wants to test it can, on any intervention, and give feedback. Its factors follow CHLP's assessments as reissued on November 23 and 24, 2026, and every source names the issue of November 24. An electric school bus reads about $30.0 million per DALY, since the school bus assessment now counts asthma aboard at the Global Burden of Disease 2023 figure. Deaths convert to DALYs at the Global Burden of Disease 2023 figure for each cause and place, and the US yardstick is compared with the cost per DALY directly. Nine entries were added the same day, each checked against its assessment's own cells. They cover electric cars, sustainable aviation fuel, used vehicle imports, coal mine methane, cement, nickel smelters, air conditioners, cookstove credits and battery recycling. Each entry opens with its assessment's default for the share that would have happened anyway: 50% for most, 70% for the electric car incentive, and 80% for the vehicle standards and the cookstove credits. For programs in the United States, the result is also set beside the US yardstick of $759,819 for a healthy year, the federal value at September 2026 prices. A test version: figures and wording may change.
+Beta 0.1, November 23, 2026, built from the CHLP spreadsheet, version 0.27, November 25, 2026. The tool is in open beta: anyone who wants to test it can, on any intervention, and give feedback. Its factors follow CHLP's assessments as issued on November 25, 2026, and every source names its assessment's current version. Version 0.27 takes the share that would have happened anyway off the climate figure and reads a cost for each metric ton of CO2e cut against $332. Coal mine methane destroyed now counts 27.0 metric tons of CO2e a metric ton, net of the CO2 the burning forms. The page warns, and only warns, when a cost for each unit is more than five times above or below its assessment's own. The cookstove credits entry's worst case now takes the published rates of adoption and use, from screen N1. No other cost per DALY has changed. For programs in the United States, the result is also set beside the US yardstick of $759,819 for a healthy year, the federal value at September 2026 prices. A test version: figures and wording may change.
 
 ## License
 
