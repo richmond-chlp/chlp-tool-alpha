@@ -1,10 +1,14 @@
 # The CHLP tool (beta)
 
-An open tool from the Climate Health Ledger Project. An organization enters what a climate program delivers and what it costs. The tool returns the health gained, in disability-adjusted life years (DALYs) averted a year, and a cost per DALY as a best, a central and a worst case. Every result shows its inputs, sources and factors, so whoever reads it can check it.
+An open tool from the Climate Health Ledger Project. An organization enters what a climate program delivers and what it costs. The tool returns the health gained, in disability-adjusted life years (DALYs) averted a year, and a cost per DALY as a best, a central and a worst case. Where the program cuts emissions, it also gives a cost for each metric ton of CO2e cut, on its own measure. Every result shows its inputs, sources and factors, so whoever reads it can check it.
 
 ## Use it
 
 Open the published page at https://richmond-chlp.github.io/chlp-tool-alpha/, or download `index.html` and open it in a browser. An entry takes about 30 minutes.
+
+The page first asks what the implementer's funders measure: health, climate or both. The answer sets which result leads and which causal chain opens; the other ledger still shows beside it. In the implementer's view, the page then goes one step at a time, from what the program delivers to its costs, adjustments and emissions, and each step folds to a summary once done. "Show every step" opens them all, and a bar at the foot of the screen keeps the result in view. Two examples show how it works: solar-powered oxygen in one hospital, and, when climate leads, ten electric school buses.
+
+An organization that has filled in the CHLP spreadsheet can open it on the page, and the page fills in its own fields. After finishing on the page, it can save the entry as the spreadsheet, filled in, for a funder who wants a traditional submission.
 
 The same estimate reads at three depths. The implementer's view gives the result. The program officer's view adds the detailed metrics. The researcher's view shows the whole calculation as a sheet, with each figure's source and the passage behind it.
 
@@ -22,22 +26,24 @@ Health and climate can also be read together, through a rate that converts tons 
 
 ## The funder's ledger
 
-`chlp-funder-ledger.html` is a first form of a page for funders. It reads several shared entries side by side and compares peers in one portfolio. It stores nothing; entries reach it as copied text or as files the implementer sends. Placeholder entries show how it reads; every name and figure on them is invented.
+`chlp-funder-ledger.html` is a first form of a page for funders. It reads several shared entries side by side and compares peers in one portfolio. It stores nothing; entries reach it as copied text or as files the implementer sends. The funder's copy of an entry names this page's address. Placeholder entries show how it reads; every name and figure on them is invented.
 
 ## What happens to what you enter
 
-- The page runs in your browser. It stores nothing, sends nothing and loads nothing from another address.
-- Sharing is optional. To share an entry, copy it from the foot of the page and send it to richmond@climatehealthledger.org, with your answers to the three questions on consent.
+- The page runs in your browser. It loads nothing from another address, and it stores and sends nothing unless you choose "Send to CHLP".
+- Sharing is optional. To share an entry with CHLP, tick "To CHLP" under "Your entry", answer the three questions on consent, read what CHLP stores, and press "Send to CHLP". You can instead copy the entry, or save it as a file, and send it to richmond@climatehealthledger.org.
+- When you send it, CHLP keeps the entry in a private spreadsheet that it shares with no one. If you answered "Yes if anonymized", the page removes your program's name, organization, place, written descriptions, notes and tracker before sending. If you answered "No", only your feedback on the tool is sent. Your contact, if you give one, is kept apart from the entry and never published. The page shows a receipt, and CHLP deletes the entry on request.
+- An entry that reaches CHLP without the three answers on consent, by any route, is read as feedback only, and CHLP keeps no copy of it.
 - Every result carries a label: "Your own modeled estimate. CHLP has not checked it."
 - CHLP checks shared entries against the implementer's records, only where the implementer agrees.
 
 ## Browsers
 
-Each page is about 1 MB and carries its own PDF reader for the studies behind the figures. The reader needs a recent browser: Safari 16.4 or later, Firefox 113 or later, or a current Chrome or Edge. In an older browser the rest of the page works and the study reader says it cannot open.
+Each page is about 1.3 MB and carries its own PDF reader for the studies behind the figures, and its own reader and writer for spreadsheets. Both need a recent browser: Safari 16.4 or later, Firefox 113 or later, or a current Chrome or Edge. In an older browser the rest of the page works, and the study reader and the spreadsheet buttons say they cannot open.
 
 ## Status
 
-Beta 0.1, November 23, 2026, built from the CHLP spreadsheet, version 0.27, November 25, 2026. The tool is in open beta: anyone who wants to test it can, on any intervention, and give feedback. Its factors follow CHLP's assessments as issued on November 25, 2026, and every source names its assessment's current version. Version 0.27 takes the share that would have happened anyway off the climate figure and reads a cost for each metric ton of CO2e cut against $332. Coal mine methane destroyed now counts 27.0 metric tons of CO2e a metric ton, net of the CO2 the burning forms. The page warns, and only warns, when a cost for each unit is more than five times above or below its assessment's own. The cookstove credits entry's worst case now takes the published rates of adoption and use, from screen N1. No other cost per DALY has changed. For programs in the United States, the result is also set beside the US yardstick of $759,819 for a healthy year, the federal value at September 2026 prices. A test version: figures and wording may change.
+Beta 0.1, November 23, 2026, built from the CHLP spreadsheet, version 0.28, November 25, 2026. The tool is in open beta: anyone who wants to test it can, on any intervention, and give feedback. Its factors follow CHLP's assessments as issued on November 25, 2026, and every source names its assessment's current version. Version 0.28 asks which ledger leads, shows the co-benefit for each $1 million spent with each ledger read against its own bar, goes one step at a time for implementers, reads and writes the CHLP spreadsheet, and lets an implementer send an entry to CHLP after consent. No cost per DALY has changed. For programs in the United States, the result is also set beside the US yardstick of $759,819 for a healthy year, the federal value at September 2026 prices. A test version: figures and wording may change.
 
 ## License
 
