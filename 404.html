@@ -75,7 +75,7 @@ figure.shot img{display:block;width:100%;height:auto;border:1px solid var(--line
 figure.shot figcaption{font-size:.88rem;color:var(--muted);margin-top:8px}
 /* CHLP frame, rulings 553 to 555 (November 27, 2026): one width, one type size, one bar, one footer and one footnote size on every CHLP page.
    climatehealthledger.org, tool.climatehealthledger.org and the Intervention Maps each inline this file after their own styles.
-   Change it here, then rebuild all three. Each page defines --surface, --ink, --muted, --line and --accent for light and dark. */
+   Change it here, then rebuild all three. November 27, 2026: the footer's gold rule spans the text, not the gutters. Each page defines --surface, --ink, --muted, --line and --accent for light and dark. */
 :root{--chlp-frame:1200px;--chlp-gold:#F0A73A}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px}
 .brandbar{background:var(--surface);border-bottom:3px solid var(--chlp-gold)}
@@ -92,7 +92,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica N
 .bb-nav a:hover{border-bottom-color:var(--line)}
 .bb-nav a[aria-current="page"]{border-bottom-color:var(--chlp-gold);font-weight:600}
 @media (max-width:640px){.bb-prod{display:none}.bb-nav{margin-left:0;width:100%;gap:4px 18px}.bb-nav .nl{display:none}}
-.sitefoot{max-width:var(--chlp-frame);margin-left:auto;margin-right:auto;box-sizing:border-box;padding:16px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));border-top:3px solid var(--chlp-gold);font-size:.85rem;line-height:1.5;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.sitefoot{width:calc(100% - 32px);max-width:calc(var(--chlp-frame) - 32px);margin-left:auto;margin-right:auto;box-sizing:border-box;padding:16px 0 28px;border-top:3px solid var(--chlp-gold);font-size:.85rem;line-height:1.5;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .sitefoot .sf-name{color:var(--ink);font-weight:600}
 sup{font-size:.7em;line-height:0;vertical-align:super;font-weight:400}
 sup a{text-decoration:none;font-weight:400}
