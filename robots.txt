@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tool.climatehealthledger.org/sitemap.xml
